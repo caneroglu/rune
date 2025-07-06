@@ -3,12 +3,16 @@ name = "rune"
 version = "0.1.0"
 edition = "2024"
 
+
 [dependencies]
 patricia_tree = "0.9.0"
 anyhow = "1.0.98"
 thiserror = "2.0.12"
-chrono = {version = "0.4.41", features = ["alloc"]}
-uuid = {version = "1.17.0", features = ["v4"]}
+chrono = {version = "0.4.41", features = ["alloc","serde"]}
+uuid = {version = "1.17.0", features = ["v4","serde"]}
 sha2 = "0.10.9"
 rs_merkle = "1.5.0"
 hex = "0.4.3"
+bincode = {version = "2.0.1", features = ["std","serde","derive"]}
+serde = { version = "1.0.219", features = ["derive"] }
+clap = {version = "4.5.40",features = ["derive"]}

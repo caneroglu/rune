@@ -1,8 +1,7 @@
 pub mod datamodel;
-
-
-
-
+pub mod saveandload;
+pub mod indexing;
+pub mod terminal;
 /*#[cfg(test)]
 mod tests {
     use super::*;
