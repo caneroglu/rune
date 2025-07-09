@@ -1,0 +1,39 @@
+// Patricia Tree K/V DB Query Language
+
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+
+// Operators
+op_upsert = { "+" }
+op_delete = { "-" }
+op_read = { "$" }
+op_rename = { "+=" }
+operator = { op_rename | op_upsert | op_delete | op_read }
+
+// Access modes
+exact_access = { ":" }
+radix_access = { "." }
+access_mode = { exact_access | radix_access }
+
+// Identifiers
+db_name = @{ (ASCII_ALPHANUMERIC | "_")+ }
+key = @{ (ASCII_ALPHANUMERIC | "_" | "-" | "/" | ":")+ }
+
+// Value - everything after first =
+value = @{ (!(";" | NEWLINE) ~ ANY)* }
+
+// Commands
+upsert_cmd = { op_upsert ~ db_name ~ radix_access ~ key ~ "=" ~ value }
+delete_cmd = { op_delete ~ db_name ~ access_mode ~ key }
+read_cmd = { op_read ~ db_name ~ access_mode ~ key }
+rename_cmd = { op_rename ~ db_name ~ access_mode ~ key ~ "=" ~ key }
+
+command = { rename_cmd | upsert_cmd | delete_cmd | read_cmd }
+
+// Pipeline
+pipeline = { command ~ (">" ~ command)+ }
+
+// Statement
+statement = { pipeline | command }
+
+// Program
+program = { SOI ~ (statement ~ (";" ~ statement)*)? ~ EOI }

@@ -1,10 +1,12 @@
 use std::fs::File;
 use bincode::{config, decode_from_std_read, encode_into_std_write};
 use patricia_tree::PatriciaMap;
+use pest::Parser;
 use rs_merkle::{Hasher, MerkleProof, MerkleTree};
  use sha2::{Digest, Sha256};
 use uuid::Uuid;
 use rune::datamodel::{DataModel, Sha256Algorithm};
+use rune::parser::{RQLParser, Rule};
 use rune::saveandload::{EncodeDecodeDataMethods, EncodeDecodeDataModel};
 /*
 TODO: Şöyle bir tablette dizayn et bakalım, UX açısından nasıl daha iyi hale getirirsin Patricia tree için?
@@ -18,6 +20,7 @@ TODO: Eğer performans kaybı olursa, bu indeks'i farklı kütüphane ile yazabi
 
 TODO: Saklanan veri tipini gösteren *önek*te yaratmalı mıyım? yoksa şu aşamada fazla kompleks mi olur? Yaratalım. örn, 'b' = binary, 'j' = jpeg gibi bir şey olsun. Sınırlı olması yeterli. Popüler olursa geliştiririz. Şu aşamada gereksiz.
 
+TODO!: PARSER DİLİNİ SİKTİR ET. SİMPLE K/V. BASİT DİL YAZABİLİRSİN BUNA UYGUN!
 
 */
 
@@ -38,6 +41,9 @@ fn main() {
         "deneme_veri2".to_owned()
     );
 
+    let ornek_query = "+=db.key1 = key2";
+
+    RQLParser::parse_query(ornek_query.to_owned());
 
     let a1  = EncodeDecodeDataModel{data: v1.clone()};
     let a2  = EncodeDecodeDataModel{data: v2.clone()};
@@ -95,4 +101,13 @@ fn main() {
         println!("Key: {}\n Val: {}",String::from_utf8(row.0).unwrap(),row.1)
     }*/
 
+}
+
+fn process_pair(pair: pest::iterators::Pair<Rule>, indent: usize) {
+    let indent_str = "  ".repeat(indent);
+    println!("{}{:?}: {}", indent_str, pair.as_rule(), pair.as_str());
+
+    for inner_pair in pair.into_inner() {
+        process_pair(inner_pair, indent + 1);
+    }
 }
