@@ -41,7 +41,7 @@ fn main() {
         "deneme_veri2".to_owned()
     );
 
-    let ornek_query = "+=db.key1 = key2";
+    let ornek_query = "+db:key1 = val2";
 
     RQLParser::parse_query(ornek_query.to_owned());
 

@@ -21,11 +21,15 @@ key = @{ (ASCII_ALPHANUMERIC | "_" | "-" | "/" | ":")+ }
 // Value - everything after first =
 value = @{ (!(";" | NEWLINE) ~ ANY)* }
 
-// Commands
-upsert_cmd = { op_upsert ~ db_name ~ radix_access ~ key ~ "=" ~ value }
+// * : wildcard operatörü eklesem mi yoksa, dinamik olarak mı parse etsem?
+
+// upsert için exact şart - birden fazla key'i aynı değer verilmez.
+upsert_cmd = { op_upsert ~ db_name ~ exact_access ~ key ~ "=" ~ value }
 delete_cmd = { op_delete ~ db_name ~ access_mode ~ key }
 read_cmd = { op_read ~ db_name ~ access_mode ~ key }
-rename_cmd = { op_rename ~ db_name ~ access_mode ~ key ~ "=" ~ key }
+
+// rename için exact şart - birden fazla key'i aynı isimlendirmek K/V'ye aykırı.
+rename_cmd = { op_rename ~ db_name ~ exact_access ~ key ~ "=" ~ key }
 
 command = { rename_cmd | upsert_cmd | delete_cmd | read_cmd }
 

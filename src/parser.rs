@@ -11,7 +11,7 @@ pub enum Komutlar {
     Upsert { db: String, key: String, value: String },
     Delete { db: String, key: String, exact: bool },
     Read { db: String, key: String, exact: bool },
-    Rename { db: String, old_key: String, new_key: String, exact: bool },
+    Rename { db: String, old_key: String, new_key: String},
 }
 
 impl RQLParser {
@@ -40,6 +40,8 @@ impl RQLParser {
                  let key = inner.next()?.as_str().to_string();
                 Some(Komutlar::Read {db,key,exact})
             },
+
+            // TODO
             Rule::delete_cmd => {
                 let mut inner = ikili.into_inner();
                 inner.next();
@@ -58,16 +60,12 @@ impl RQLParser {
                 inner.next(); // operator skip
                 let db = inner.next()?.as_str().to_string();
 
-                let access_mode = inner.next()?;
-                // access_mode : '.' | ':' true false olarak yazabiliriz.
-                let exact = access_mode.into_inner()
-                    .next()
-                    .map(|a| matches!(a.as_rule(), Rule::exact_access))
-                    .unwrap_or(false);
+                inner.next()?; // skip exact mode, çünkü biliyoruz.
+
 
                 let old_key = inner.next()?.as_str().to_string();
                 let new_key = inner.next()?.as_str().to_string();
-                Some(Komutlar::Rename { db,old_key,new_key,exact })
+                Some(Komutlar::Rename { db,old_key,new_key})
             }
             _ => return None
         }
