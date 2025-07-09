@@ -41,7 +41,7 @@ impl RQLParser {
                 Some(Komutlar::Read {db,key,exact})
             },
 
-            // TODO
+
             Rule::delete_cmd => {
                 let mut inner = ikili.into_inner();
                 inner.next();
@@ -52,7 +52,17 @@ impl RQLParser {
                     .next()
                     .map(|a| matches!(a.as_rule(), Rule::exact_access))
                     .unwrap_or(false);
+
+
                 let key = inner.next()?.as_str().to_string();
+
+                if !exact && key.ends_with('*') {
+                    let prefix = key.trim_end_matches('*');
+
+                    println!("Silinecek önekler: {}", prefix);
+                }
+
+
                 Some(Komutlar::Delete { db,key,exact })
             },
             Rule::rename_cmd => {

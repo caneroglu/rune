@@ -16,7 +16,9 @@ access_mode = { exact_access | radix_access }
 
 // Identifiers
 db_name = @{ (ASCII_ALPHANUMERIC | "_")+ }
-key = @{ (ASCII_ALPHANUMERIC | "_" | "-" | "/" | ":")+ }
+
+// = , ; ve boşluk hariç her şey.
+key = @{ (!("=" | ";" | WHITESPACE) ~ ANY)+ }
 
 // Value - everything after first =
 value = @{ (!(";" | NEWLINE) ~ ANY)* }
