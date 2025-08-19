@@ -1,9 +1,11 @@
 use std::fs::File;
 use bincode::{config, decode_from_std_read, encode_into_std_write};
+use clap::Parser;
 use patricia_tree::PatriciaMap;
-use pest::Parser;
+
 use rs_merkle::{Hasher, MerkleProof, MerkleTree};
- use sha2::{Digest, Sha256};
+ use rune::terminal::{Cli, Command};
+use sha2::{Digest, Sha256};
 use uuid::Uuid;
 use rune::datamodel::{DataModel, Sha256Algorithm};
 use rune::parser::{RQLParser, Rule};
@@ -25,6 +27,42 @@ TODO!: PARSER DİLİNİ SİKTİR ET. SİMPLE K/V. BASİT DİL YAZABİLİRSİN BU
 */
 
 fn main() {
+
+    let cli = Cli::parse();
+
+    match cli.command {
+        Command::Query { query, file, interactive } => {
+            if let Some(query_string) = query {
+                print!("Debug: \n Sorgu CLI Parsed Edildi: {}",query_string);
+
+                RQLParser::parse_query(query_string.to_owned());
+            } else if let Some(file_path) = file {
+                println!("Debug: Dosyadan okuyor: {:?}",file_path)
+            } else if interactive {
+                println!("Debug: Interaktif Mod ON")
+            }
+        }
+    }
+
+    // let ds: Vec<(Vec<u8>, &String)> = map.iter_prefix(b"main.202507").collect();
+
+/*    for row in ds.into_iter() {
+        println!("Key: {}\n Val: {}",String::from_utf8(row.0).unwrap(),row.1)
+    }*/
+
+}
+
+fn process_pair(pair: pest::iterators::Pair<Rule>, indent: usize) {
+    let indent_str = "  ".repeat(indent);
+    println!("{}{:?}: {}", indent_str, pair.as_rule(), pair.as_str());
+
+    for inner_pair in pair.into_inner() {
+        process_pair(inner_pair, indent + 1);
+    }
+}
+
+/*
+
     let v1 = DataModel::new(
         "main".to_string(),
         chrono::Utc::now(),
@@ -89,25 +127,4 @@ fn main() {
     if proof.verify(merkle_kok,&kontrol_edilecek_indisler,markle_kontrol_edilecek_yapraklar,markle_leafs.len()) {
         println!("PROOF OK!")
     }else { println!("PROOF ERROR!") }
-
-
-
-
-
-
-    // let ds: Vec<(Vec<u8>, &String)> = map.iter_prefix(b"main.202507").collect();
-
-/*    for row in ds.into_iter() {
-        println!("Key: {}\n Val: {}",String::from_utf8(row.0).unwrap(),row.1)
-    }*/
-
-}
-
-fn process_pair(pair: pest::iterators::Pair<Rule>, indent: usize) {
-    let indent_str = "  ".repeat(indent);
-    println!("{}{:?}: {}", indent_str, pair.as_rule(), pair.as_str());
-
-    for inner_pair in pair.into_inner() {
-        process_pair(inner_pair, indent + 1);
-    }
-}
+*/

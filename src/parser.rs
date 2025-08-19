@@ -93,13 +93,18 @@ impl RQLParser {
                        for komut in statement.into_inner() {
                            for komut_adi in komut.into_inner() {
                                if let Some(hangi_komut) = Self::parse_command(komut_adi) {
-                                   println!("{:?}", hangi_komut);
+                                   println!("\n QUERY: {:?}", hangi_komut);
+                               } else {
+                                    println!("QUERY PARSE ERROR!")
                                }
+                               
                            }
                        }
                    }
                }
            }
+       } else {
+            println!("\n QUERY PARSE ERROR!")
        }
    }
 }
