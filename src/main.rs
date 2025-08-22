@@ -26,30 +26,8 @@ TODO!: PARSER DİLİNİ SİKTİR ET. SİMPLE K/V. BASİT DİL YAZABİLİRSİN BU
 
 */
 
-fn main() {
-
-    let cli = Cli::parse();
-
-    match cli.command {
-        Command::Query { query, file, interactive } => {
-            if let Some(query_string) = query {
-                print!("Debug: \n Sorgu CLI Parsed Edildi: {}",query_string);
-
-                RQLParser::parse_query(query_string.to_owned());
-            } else if let Some(file_path) = file {
-                println!("Debug: Dosyadan okuyor: {:?}",file_path)
-            } else if interactive {
-                println!("Debug: Interaktif Mod ON")
-            }
-        }
-    }
-
-    // let ds: Vec<(Vec<u8>, &String)> = map.iter_prefix(b"main.202507").collect();
-
-/*    for row in ds.into_iter() {
-        println!("Key: {}\n Val: {}",String::from_utf8(row.0).unwrap(),row.1)
-    }*/
-
+fn main() -> Result<(), anyhow::Error> {
+     Command::parse_command()
 }
 
 fn process_pair(pair: pest::iterators::Pair<Rule>, indent: usize) {
