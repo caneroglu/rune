@@ -17,12 +17,15 @@ TODO: Şöyle bir tablette dizayn et bakalım, UX açısından nasıl daha iyi h
 - Ya da belki, iki farklı sürüm yazarım. Birincisi sadece simple K/V diğeri ise döküman tutan gelişmiş versiyonu.
 
 
-TODO: Adres defteri ile UUID saklarım bir *key* için, sorgu aşamasında UUID isterim, böylelikle iki "Ali" arasında farklılık olur. Adres defteri indeksini de patricia tree ile yazabilirim. *get* metodu *full match* istiyor zaten.
-TODO: Eğer performans kaybı olursa, bu indeks'i farklı kütüphane ile yazabilirim. Şu anlık gerek yok. Sonra bakarız.
-
-TODO: Saklanan veri tipini gösteren *önek*te yaratmalı mıyım? yoksa şu aşamada fazla kompleks mi olur? Yaratalım. örn, 'b' = binary, 'j' = jpeg gibi bir şey olsun. Sınırlı olması yeterli. Popüler olursa geliştiririz. Şu aşamada gereksiz.
-
-TODO!: PARSER DİLİNİ SİKTİR ET. SİMPLE K/V. BASİT DİL YAZABİLİRSİN BUNA UYGUN!
+TODO: 
+? CHECK query_db -> query'den PATH'ı PASLA -> load_db/save_db -> RUN rest of QUERY -> save_db
+* bu flow'u iyi yap.
+* 1. PARSE QUERY
+* 2. CHECK DB_PATH
+* 3. CREATE or LOAD_DB
+* 4. RUN QUERY
+* 5. SAVE RECENT DB
+? komutları göstermenin kayıtla pek alakası yok.
 
 */
 

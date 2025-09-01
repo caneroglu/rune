@@ -86,6 +86,21 @@ impl RQLParser {
                        for komut in statement.into_inner() {
                            for komut_adi in komut.into_inner() {
                                if let Some(hangi_komut) = Self::parse_command(komut_adi) {
+ 
+                                match &hangi_komut {
+                                    Komutlar::Upsert { db, key, value } => {
+                                        Self::check_file_if_exist(db.clone());
+                                    },
+                                    Komutlar::Delete { db, key, exact } => {
+                                         Self::check_file_if_exist(db.clone());
+                                    },
+                                    Komutlar::Read { db, key, exact } => {
+                                         Self::check_file_if_exist(db.clone());
+                                    },
+                                    Komutlar::Rename { db, old_key, new_key } => {
+                                         Self::check_file_if_exist(db.clone());
+                                    },
+                                }
                                    println!("\n QUERY: {:?}", hangi_komut);
                                } else {
                                     println!("QUERY PARSE ERROR!")
@@ -99,5 +114,9 @@ impl RQLParser {
        } else {
             println!("\n QUERY PARSE ERROR!")
        }
+   }
+
+   fn check_file_if_exist(db_name: String) {
+       println!("\nDB_NAME: {}", db_name)
    }
 }

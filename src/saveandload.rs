@@ -1,4 +1,5 @@
-use std::fs::File;
+use std::{fs::File, path::{Path, PathBuf}};
+use anyhow::{anyhow, Error, Ok};
 use bincode::{config, decode_from_std_read, encode_into_std_write, Decode, Encode};
 use crate::datamodel::DataModel;
 
@@ -11,8 +12,8 @@ pub struct EncodeDecodeDataModel {
 pub trait EncodeDecodeDataMethods {
     fn encode(&self) -> Vec<u8>;
     fn decode(data: Vec<u8>) -> Option<Self> where Self: Sized;
-    fn encode_and_save(&self, path: String) -> ();
-    fn load_and_decode(path: String) -> Option<Self> where Self: Sized;
+    fn save_db(&self, path: String) -> Result<(), anyhow::Error>;
+    fn load_db(path: String) -> Result<Self, anyhow::Error> where Self: Sized;
 }
 
 impl EncodeDecodeDataModel {
@@ -33,17 +34,29 @@ impl EncodeDecodeDataMethods for EncodeDecodeDataModel {
         Some(result.0)
     }
 
-   fn encode_and_save(&self, path: String) -> () {
-        let bincode_cfg = config::standard();
-        let mut dosya = File::create(path).unwrap();
-        let c = encode_into_std_write(self, &mut dosya, config::standard()).unwrap();
+ 
+ 
+
+   fn save_db(&self, path: String) -> Result<(), anyhow::Error> {
+
+        let bincode_cfg: config::Configuration = config::standard();
+        let db_path = PathBuf::from(format!("/databases/{}.bin",path));
+
+        if db_path.try_exists()? {
+            let mut dosya = File::create(path)?;
+            let result_bytes = encode_into_std_write(self, &mut dosya, bincode_cfg)?;
+        } else {
+            let mut dosya = File::open(db_path)?;
+            let result_bytes = encode_into_std_write(self, &mut dosya, bincode_cfg)?;
+        }
+        Ok(())
     }
 
-    fn load_and_decode(path: String) -> Option<Self> {
+    fn load_db(path: String) -> Result<Self, anyhow::Error> {
         let bincode_cfg = config::standard();
-        let mut dosya = File::open(path).unwrap();
-        let sonuc: Self = decode_from_std_read(&mut dosya,bincode_cfg).unwrap();
-        Some(sonuc)
+        let mut dosya = File::open(path)?;
+        Ok(decode_from_std_read(&mut dosya,bincode_cfg)?)
+      
     }
 }
 
@@ -59,16 +72,25 @@ impl EncodeDecodeDataMethods for Vec<EncodeDecodeDataModel> {
         Some(result.0)
     }
 
-    fn encode_and_save(&self, path: String) -> () {
-        let bincode_cfg = config::standard();
-        let mut dosya = File::create(path).unwrap();
-        let c = encode_into_std_write(self, &mut dosya, config::standard()).unwrap();
+   fn save_db(&self, path: String) -> Result<(), anyhow::Error> {
+
+        let bincode_cfg: config::Configuration = config::standard();
+        let db_path = PathBuf::from(format!("/databases/{}.bin",path));
+
+        if db_path.try_exists()? {
+            let mut dosya = File::create(path)?;
+            let result_bytes = encode_into_std_write(self, &mut dosya, bincode_cfg)?;
+        } else {
+            let mut dosya = File::open(db_path)?;
+            let result_bytes = encode_into_std_write(self, &mut dosya, bincode_cfg)?;
+        }
+        Ok(())
     }
 
-    fn load_and_decode(path: String) -> Option<Self> {
+    fn load_db(path: String) -> Result<Self, anyhow::Error> {
         let bincode_cfg = config::standard();
-        let mut dosya = File::open(path).unwrap();
-        let sonuc: Self = decode_from_std_read(&mut dosya,bincode_cfg).unwrap();
-        Some(sonuc)
+        let mut dosya = File::open(path)?;
+        Ok(decode_from_std_read(&mut dosya,bincode_cfg)?)
+      
     }
 }
