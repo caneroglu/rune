@@ -9,7 +9,7 @@ use sha2::{Digest, Sha256};
 use uuid::Uuid;
 use rune::datamodel::{DataModel, Sha256Algorithm};
 use rune::parser::{RQLParser, Rule};
-use rune::saveandload::{EncodeDecodeDataMethods, EncodeDecodeDataModel};
+ 
 /*
 TODO: Şöyle bir tablette dizayn et bakalım, UX açısından nasıl daha iyi hale getirirsin Patricia tree için?
 - Mesela, 2025 -> "a" gibi *encoding* yapabilirsin, bu sayede "a" önek araması yapıldığında hızlıca 2025 için sorgular gelir. *encoding* O(1) olduğundan zamansal olarak yük yok.
@@ -20,11 +20,7 @@ TODO: Şöyle bir tablette dizayn et bakalım, UX açısından nasıl daha iyi h
 TODO: 
 ? CHECK query_db -> query'den PATH'ı PASLA -> load_db/save_db -> RUN rest of QUERY -> save_db
 * bu flow'u iyi yap.
-* 1. PARSE QUERY
-* 2. CHECK DB_PATH
-* 3. CREATE or LOAD_DB
-* 4. RUN QUERY
-* 5. SAVE RECENT DB
+ 
 ? komutları göstermenin kayıtla pek alakası yok.
 
 */

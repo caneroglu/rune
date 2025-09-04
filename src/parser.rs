@@ -1,10 +1,19 @@
+use patricia_tree::PatriciaMap;
 use pest::Parser;
 use pest_derive::Parser;
+use uuid::Uuid;
+
+use crate::datamodel::{DataModel, EncodeDecodeDataMethods, EncodeDecodeDataModel};
 
 #[derive(Parser)]
 #[grammar = "rql.pest"]
 pub struct RQLParser;
 
+//TODO
+// * PatriciaMap, adı üstünde MAP. k/v olarak veri eklenir/silinir.
+// * DB k/v == PatriciaMap k/v
+// ! DB'nin kendisinin load/save ayrı. PatriciaMap sadece k/v olmalı. iterasyon yapacaksın.
+// ! zaten, DB'nin adı için patricia yürütmene gerek yok. K/V için yeterli.
 
 #[derive(Debug)]
 pub enum Komutlar {
@@ -86,22 +95,41 @@ impl RQLParser {
                        for komut in statement.into_inner() {
                            for komut_adi in komut.into_inner() {
                                if let Some(hangi_komut) = Self::parse_command(komut_adi) {
- 
-                                match &hangi_komut {
+                                 println!("\n QUERY: {:?}", hangi_komut);
+                                match hangi_komut {
+                                   
+                                   // bin save load + encode/decode - ayrı ayrı.
                                     Komutlar::Upsert { db, key, value } => {
                                         Self::check_file_if_exist(db.clone());
+                                        let _datamodel = DataModel::new(db,
+                                            chrono::Utc::now(),key,
+                                            Some(value));
+                                        println!("{:?}",_datamodel);
+                                        let _b = EncodeDecodeDataModel::new(_datamodel);
+                                        
+  
+                                        _b.save_db().unwrap()
+
                                     },
                                     Komutlar::Delete { db, key, exact } => {
                                          Self::check_file_if_exist(db.clone());
                                     },
                                     Komutlar::Read { db, key, exact } => {
                                          Self::check_file_if_exist(db.clone());
+
+                                        let _datamodel = DataModel::new(db,
+                                            chrono::Utc::now(),key,
+                                        None);
+                                        println!("{:?}",_datamodel);
+                                        let _b = EncodeDecodeDataModel::new(_datamodel);
+                                        
+                                        _b.load_db().unwrap();
                                     },
                                     Komutlar::Rename { db, old_key, new_key } => {
                                          Self::check_file_if_exist(db.clone());
                                     },
                                 }
-                                   println!("\n QUERY: {:?}", hangi_komut);
+                                   
                                } else {
                                     println!("QUERY PARSE ERROR!")
                                }

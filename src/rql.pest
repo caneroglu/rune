@@ -5,7 +5,7 @@ WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
 // Operators
 op_upsert = { "+" }
 op_delete = { "-" }
-op_read = { "$" }
+op_read = { "@" }
 op_rename = { "+=" }
 operator = { op_rename | op_upsert | op_delete | op_read }
 
