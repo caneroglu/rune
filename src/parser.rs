@@ -115,15 +115,32 @@ impl RQLParser {
                                          Self::check_file_if_exist(db.clone());
                                     },
                                     Komutlar::Read { db, key, exact } => {
-                                         Self::check_file_if_exist(db.clone());
+                                        Self::check_file_if_exist(db.clone());
+
+                                        //let mut patricia_map = PatriciaMap::new();
+
 
                                         let _datamodel = DataModel::new(db,
                                             chrono::Utc::now(),key,
                                         None);
-                                        println!("{:?}",_datamodel);
+
+                                        // ? direkt path'tan al, yoksa bu daha mı tutarlı?
                                         let _b = EncodeDecodeDataModel::new(_datamodel);
                                         
-                                        _b.load_db().unwrap();
+                                        let loaded_b = _b.load_db().unwrap();
+                                        // ! SÜREKLİ FİLE RELOAD yapma! CACHE EKLE! Bir kere yükle - read için.
+
+
+                                        // TODO: 
+                                        // * "DataModel" sadece "bir entity". 
+                                        // * Bize "vec" lazım.
+                                        // * Birden fazla veri için.
+                                        // ! SAVE truncate YAPMIYOR, overwrite yapıyor! Altına ekleme - upsert yapmalı.
+                                        // ! "upsert" query için, 
+                                            // ! ilgili dosyayı oku ardından sonuna ekleme yap.
+                                            // ! zaten dosya adı == db_adı olmalı.
+                                            // ! o "db"deki tüm "k/v" o db'ye AIT.
+                                            // ! kısacası, FS'de basitçe "truncate" save yap.
                                     },
                                     Komutlar::Rename { db, old_key, new_key } => {
                                          Self::check_file_if_exist(db.clone());
