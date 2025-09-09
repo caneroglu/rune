@@ -1,9 +1,13 @@
+use std::{collections::HashMap, time::{SystemTime, UNIX_EPOCH}};
+
+use chrono::Utc;
 use patricia_tree::PatriciaMap;
 use pest::Parser;
 use pest_derive::Parser;
 use uuid::Uuid;
 
-use crate::datamodel::{DataModel, EncodeDecodeDataMethods, EncodeDecodeDataModel};
+use crate::datamodel::{DataMethods, DataModel, ExternalDataModel, InternalDataModel};
+
 
 #[derive(Parser)]
 #[grammar = "rql.pest"]
@@ -101,14 +105,17 @@ impl RQLParser {
                                    // bin save load + encode/decode - ayrı ayrı.
                                     Komutlar::Upsert { db, key, value } => {
                                         Self::check_file_if_exist(db.clone());
-                                        let _datamodel = DataModel::new(db,
-                                            chrono::Utc::now(),key,
-                                            Some(value));
+ 
+                                        let _datamodel = DataModel::new(ExternalDataModel::new(key, 
+                                            InternalDataModel::new(Utc::now(), Some(value))),db);
                                         println!("{:?}",_datamodel);
-                                        let _b = EncodeDecodeDataModel::new(_datamodel);
+
+                                        let _hmap: HashMap<String, InternalDataModel> = HashMap::<String, InternalDataModel>::load_db(_datamodel).unwrap();
+
+
                                         
   
-                                        _b.save_db().unwrap()
+                                        _hmap.save_db().unwrap()
 
                                     },
                                     Komutlar::Delete { db, key, exact } => {

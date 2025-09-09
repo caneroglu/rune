@@ -1,50 +1,63 @@
-use std::{fmt::Display, fs::{self, File, OpenOptions}, path::PathBuf};
+use std::{collections::HashMap, fmt::Display, fs::{self, File, OpenOptions}, path::PathBuf};
 use bincode::{config, decode_from_std_read, encode_into_std_write, Decode, Encode};
 use chrono::{Date, DateTime, NaiveDateTime, Utc};
 use rs_merkle::{Hasher};
 use serde::{Deserialize, Serialize};
 use sha2::{Sha256, Digest, digest::FixedOutput};
-use uuid::{Timestamp, Uuid};
+use uuid::{timestamp, Timestamp, Uuid};
 
-// column - bir nevi SQL column name.
-#[derive(Default,Debug,Clone,Serialize,Deserialize )]
-pub struct DataModel {
-    pub table_name: String,
-    pub timestamp: DateTime<Utc>, // UNIX timestamp - with padding. - added with this type in case of inserting custom time.
+// Dosya adı = veritabanı adı.
+#[derive(Default,Debug,Clone,Serialize,Deserialize,Encode,Decode )]
+pub struct InternalDataModel { 
+    pub ts: i64, // UNIX timestamp  
     //pub uuid: Uuid, Şu an gereksiz. Tek kaynaktan yazıyoruz, ilerde belki.
+    pub val: Option<String>,
+}
+
+
+// daha sonra, farklı veritiplerini implement edebilirim. Şu anlık enough.
+impl InternalDataModel {
+    pub fn new(ts: DateTime<Utc>, val: Option<String>) -> Self {
+        let ts_debug = ts.format("%Y%m%d%H%M%S%9f").to_string();
+        Self { ts: ts.timestamp(), val }
+    }
+
+    // DateTime'a geri dönüştürme helper'ı
+    pub fn get_datetime(&self) -> DateTime<Utc> {
+        DateTime::from_timestamp(self.ts, 0).unwrap_or_default()
+    }
+}
+// Sadece file-load ve save kısmında bu objeyi kullanmamız yeterli.
+
+#[derive(Default,Debug,Clone,Serialize,Deserialize,Encode,Decode)]
+pub struct ExternalDataModel {
     pub key: String,
-    pub value: Option<String>,
+    pub val: InternalDataModel,
 }
 
-impl Display for DataModel {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let ts = self.timestamp.format("%Y%m%d%H%M%S%9f").to_string();
-        // main.20250704102757099969.1210695b-1148-43b5-8419-ebc8f4fb72dc.dene-key
-        // Since patricia tree works with *prefixes* we focus mainly working with Strings.
-
-        let s = if let Some(g) = &self.value  {
-            g
-        } else {
-            &"None".to_owned()
-        };
-        write!(f, "{}.{}.{}.{}", self.table_name, ts, self.key, s)
-    }
+// for Pest.rs Parsing. Sadece dosya okumak ve kaydetmek için.
+// girilen QUERY'i parse etmek için.
+#[derive(Default,Debug,Clone,Serialize,Deserialize,Encode,Decode)]
+pub struct DataModel {
+    pub data: ExternalDataModel,
+    pub db: String,
 }
 
-// Since, we gonna load and save keys into bincode - it's smart to work with String instead of static &str.
 impl DataModel {
-    pub fn new(table_name: String, timestamp: DateTime<Utc>, key: String, value: Option<String>) -> DataModel {
-
-        let ts = timestamp.format("%Y%m%d%H%M%S%9f").to_string();
- 
-        Self {
-            table_name,
-            timestamp,
-            key,
-            value,
-        }
+    pub fn new(data: ExternalDataModel, db: String) -> Self {
+        Self { data, db }
     }
 }
+
+// key kısmını hashmap'tan alacağız. append-only yöntemiyle.
+impl ExternalDataModel {
+    pub fn new(key: String, val: InternalDataModel) -> Self {
+        Self { key, val}
+    }
+}
+
+
+
 
 #[derive(Clone)]
 pub struct Sha256Algorithm {}
@@ -61,100 +74,125 @@ impl Hasher for Sha256Algorithm {
     }
     
 }
-
-#[derive(Debug,Clone,Encode,Decode)]
-pub struct EncodeDecodeDataModel {
-    #[bincode(with_serde)]
-    pub data: DataModel,
-}
-
-pub trait EncodeDecodeDataMethods {
+ 
+pub trait DataMethods {
     fn encode(&self) -> Vec<u8>;
     fn decode(data: Vec<u8>) -> Option<Self> where Self: Sized;
-    fn save_db(&self) -> Result<(), anyhow::Error>;
-    fn load_db(&self) -> Result<Self, anyhow::Error> where Self: Sized;
+    fn save_db(&self,data_m: DataModel) -> Result<(), anyhow::Error>;
+    fn load_db(data_m: DataModel) -> Result<Self, anyhow::Error> where Self: Sized;
 }
 
-impl EncodeDecodeDataModel {
-    pub fn new(data: DataModel) -> Self {
-        Self { data }
-    }
-}
-
-impl EncodeDecodeDataMethods for EncodeDecodeDataModel {
+impl DataMethods for ExternalDataModel {
     fn encode(&self) -> Vec<u8> {
         let bincode_cfg = config::standard();
         bincode::encode_to_vec(self,bincode_cfg).unwrap()
     }
 
-   fn decode(data: Vec<u8>) -> Option<Self> {
+    fn decode(data: Vec<u8>) -> Option<Self> where Self: Sized {
         let bincode_cfg = config::standard();
-        let result: (EncodeDecodeDataModel,usize) = bincode::decode_from_slice(data.as_slice(),bincode_cfg).unwrap();
+        let result: (ExternalDataModel,usize) = bincode::decode_from_slice(data.as_slice(),bincode_cfg).unwrap();
         Some(result.0)
     }
 
-   fn save_db(&self) -> Result<(), anyhow::Error> {
+    fn save_db(&self, data_m: DataModel) -> Result<(), anyhow::Error> {
 
-        let bincode_cfg: config::Configuration = config::standard();
-        let db_path = PathBuf::from(format!("./databases/{}.bin",self.data.table_name));
+        // * FEATURE: CUSTOM PATH: Later.
+         let bincode_cfg: config::Configuration = config::standard();
+        let db_path = PathBuf::from(format!("./databases/{}.bin",data_m.db));
 
         if let Some(parent) = db_path.parent() {
             fs::create_dir_all(parent)?;
         }
-
-        // create zaten UPSERT ayrı ayrı check etmeye gerek yok.
+                // create zaten UPSERT ayrı ayrı check etmeye gerek yok.
         let mut dosya = File::create(db_path)?;
-        let result_bytes = encode_into_std_write(self, &mut dosya, bincode_cfg)?;
-        println!("Dosya yazıldı: {} bayt. \n İçerik: {:?}", result_bytes, &self);
+        let result_bytes = encode_into_std_write(&data_m.data, &mut dosya, bincode_cfg)?;
+        println!("Dosya yazıldı: {} bayt. \n İçerik: {:?}", result_bytes, data_m.data);
 
         Ok(())
     }
 
-    fn load_db(&self) -> Result<Self, anyhow::Error> {
+    fn load_db(data_m: DataModel) -> Result<Self, anyhow::Error> where Self: Sized {
         let bincode_cfg = config::standard();
 
-        let db_path = PathBuf::from(format!("./databases/{}.bin",self.data.table_name));
+        let db_path = PathBuf::from(format!("./databases/{}.bin",data_m.db));
         let mut dosya = File::open(db_path)?;
         let _d = decode_from_std_read(&mut dosya,bincode_cfg)?;
         println!("Dosya okundu.İçerik: {:?}", _d);
         Ok(_d)
-      
     }
 }
  
-impl EncodeDecodeDataMethods for Vec<EncodeDecodeDataModel> {
+impl DataMethods for HashMap<String, InternalDataModel> {
     fn encode(&self) -> Vec<u8> {
-        let bincode_cfg = config::standard();
-        bincode::encode_to_vec(self,bincode_cfg).unwrap()
+        todo!()
     }
 
-    fn decode(data: Vec<u8>) -> Option<Self> {
-        let bincode_cfg = config::standard();
-        let result: (Vec<EncodeDecodeDataModel>,usize) = bincode::decode_from_slice(data.as_slice(),bincode_cfg).unwrap();
-        Some(result.0)
+    fn decode(data: Vec<u8>) -> Option<Self> where Self: Sized {
+
+        todo!()
     }
 
-   fn save_db(&self) -> Result<(), anyhow::Error> {
-
+    fn save_db(&self, data_m: DataModel) -> Result<(), anyhow::Error> {
+        // * FEATURE: CUSTOM PATH: Later.
         let bincode_cfg: config::Configuration = config::standard();
-        let db_path = PathBuf::from(format!("./databases/{}.bin",&self.first().unwrap().data.table_name));
+        let db_path = PathBuf::from(format!("./databases/{}.bin",data_m.db));
 
         if let Some(parent) = db_path.parent() {
             fs::create_dir_all(parent)?;
         }
+                // APPEND & CREATE & OPEN
+        let mut dosya = OpenOptions::new().append(true).create(true).open(db_path)?;
 
-        // create zaten UPSERT ayrı ayrı check etmeye gerek yok.
-        let mut dosya = File::create(db_path)?;
-        let result_bytes = encode_into_std_write(self, &mut dosya, bincode_cfg)?;
+
+        let result_bytes = encode_into_std_write(ExternalDataModel::new(self.k, val), &mut dosya, bincode_cfg)?;
+        println!("Dosya yazıldı: {} bayt. \n İçerik: {:?}", result_bytes, data_m.data);
+
         Ok(())
     }
 
-    fn load_db(&self) -> Result<Self, anyhow::Error> {
+    fn load_db(data_m: DataModel) -> Result<Self, anyhow::Error> where Self: Sized {
         let bincode_cfg = config::standard();
-        let db_path = PathBuf::from(format!("./databases/{}.bin",&self.first().unwrap().data.table_name));
-
+        let db_path = PathBuf::from(format!("./databases/{}.bin",data_m.db));
         let mut dosya = File::open(db_path)?;
-        Ok(decode_from_std_read(&mut dosya,bincode_cfg)?)
-      
+        let _d: Vec<ExternalDataModel> = decode_from_std_read(&mut dosya,bincode_cfg)?;
+
+        let mut _hmap = _d.into_iter().map(|el|(el.key,el.val)).collect();
+        println!("Dosya okundu.İçerik: {:?}", _hmap);
+        Ok(_hmap)
     }
-} 
+}
+
+impl DataMethods for Vec<ExternalDataModel> {
+
+    fn encode(&self) -> Vec<u8> {
+        let bincode_cfg = config::standard();
+        // ! Error handling
+        bincode::encode_to_vec(self,bincode_cfg).unwrap()
+    }
+
+    fn decode(data: Vec<u8>) -> Option<Self> where Self: Sized {
+        let bincode_cfg = config::standard();
+        let result: (Vec<ExternalDataModel>,usize) = bincode::decode_from_slice(data.as_slice(),bincode_cfg).unwrap();
+        Some(result.0)
+    }
+
+    fn save_db(&self, data_m: DataModel) -> Result<(), anyhow::Error> {
+                // * FEATURE: CUSTOM PATH: Later.
+        let bincode_cfg: config::Configuration = config::standard();
+        let db_path = PathBuf::from(format!("./databases/{}.bin",data_m.db));
+
+        if let Some(parent) = db_path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+                // create zaten UPSERT ayrı ayrı check etmeye gerek yok.
+        let mut dosya = File::create(db_path)?;
+        let result_bytes = encode_into_std_write(&data_m.data, &mut dosya, bincode_cfg)?;
+        println!("Dosya yazıldı: {} bayt. \n İçerik: {:?}", result_bytes, data_m.data);
+
+        Ok(())
+    }
+
+    fn load_db(data_m: DataModel) -> Result<Self, anyhow::Error> where Self: Sized {
+        todo!()
+    }
+}
