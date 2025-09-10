@@ -110,12 +110,7 @@ impl RQLParser {
                                             InternalDataModel::new(Utc::now(), Some(value))),db);
                                         println!("{:?}",_datamodel);
 
-                                        let _hmap: HashMap<String, InternalDataModel> = HashMap::<String, InternalDataModel>::load_db(_datamodel).unwrap();
-
-
-                                        
-  
-                                        _hmap.save_db().unwrap()
+                                            _datamodel.save_db();
 
                                     },
                                     Komutlar::Delete { db, key, exact } => {
@@ -127,27 +122,38 @@ impl RQLParser {
                                         //let mut patricia_map = PatriciaMap::new();
 
 
-                                        let _datamodel = DataModel::new(db,
-                                            chrono::Utc::now(),key,
-                                        None);
+                                        let _datamodel = DataModel::new(ExternalDataModel::new(key.clone(), 
+                                            InternalDataModel::new(Utc::now(), None)),db);
+                                        println!("Placeholder - datamodel{:?} \n",_datamodel);
+                                        let loaded_b = _datamodel.load_db().unwrap();
+                                    // ! SÜREKLİ FİLE RELOAD yapma! CACHE EKLE! Bir kere yükle - read için.
+                                    // TODO: sorgulanan key'in değerini CLI'ye yansıt.
+                                    // ! "*" için belki custom READ?
+                                    // !! PATRICIA'YI IMPLEMENT ET
+                                    // !!! hashmap'a gerek var mı? direkt PATRICIA'nın hashmap'ına ekleriz?
 
-                                        // ? direkt path'tan al, yoksa bu daha mı tutarlı?
-                                        let _b = EncodeDecodeDataModel::new(_datamodel);
+                                        let mut p_map = PatriciaMap::new();
                                         
-                                        let loaded_b = _b.load_db().unwrap();
-                                        // ! SÜREKLİ FİLE RELOAD yapma! CACHE EKLE! Bir kere yükle - read için.
+                                        loaded_b.iter().for_each(|(k,v)| {
+                                            p_map.insert(k, v);
+                                        });
+
+                                        println!("Loaded patricia_map: {:?} \n", p_map);
+
+                                        if exact {
+                                            println!("exact_key_search: {:?}", p_map.get(key))                                            
+                                        } else {
+
+                                            let _test: HashMap<String, InternalDataModel> = p_map.iter_prefix(key.as_bytes()).map(|(k, &v)| { 
+                                                let s = String::from_utf8(k).unwrap();
+                                                (s,v.clone())
+                                            }).collect();
+                                            println!("radix_search: {:?}", _test )
+                                        }
 
 
-                                        // TODO: 
-                                        // * "DataModel" sadece "bir entity". 
-                                        // * Bize "vec" lazım.
-                                        // * Birden fazla veri için.
-                                        // ! SAVE truncate YAPMIYOR, overwrite yapıyor! Altına ekleme - upsert yapmalı.
-                                        // ! "upsert" query için, 
-                                            // ! ilgili dosyayı oku ardından sonuna ekleme yap.
-                                            // ! zaten dosya adı == db_adı olmalı.
-                                            // ! o "db"deki tüm "k/v" o db'ye AIT.
-                                            // ! kısacası, FS'de basitçe "truncate" save yap.
+
+ 
                                     },
                                     Komutlar::Rename { db, old_key, new_key } => {
                                          Self::check_file_if_exist(db.clone());
@@ -172,3 +178,5 @@ impl RQLParser {
        println!("\nDB_NAME: {}", db_name)
    }
 }
+
+ 

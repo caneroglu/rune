@@ -78,11 +78,62 @@ impl Hasher for Sha256Algorithm {
 pub trait DataMethods {
     fn encode(&self) -> Vec<u8>;
     fn decode(data: Vec<u8>) -> Option<Self> where Self: Sized;
-    fn save_db(&self,data_m: DataModel) -> Result<(), anyhow::Error>;
-    fn load_db(data_m: DataModel) -> Result<Self, anyhow::Error> where Self: Sized;
+    fn save_db(&self) -> Result<(), anyhow::Error>;
+    fn load_db(&self) -> Result<HashMap<String, InternalDataModel>, anyhow::Error>;
 }
 
-impl DataMethods for ExternalDataModel {
+impl DataMethods for DataModel {
+    fn encode(&self) -> Vec<u8> {
+        todo!()
+    }
+
+    fn decode(data: Vec<u8>) -> Option<Self> where Self: Sized {
+        todo!()
+    }
+
+    fn save_db(&self) -> Result<(), anyhow::Error> {
+
+        let bincode_cfg: config::Configuration = config::standard();
+        let db_path = PathBuf::from(format!("./databases/{}.bin",self.db));
+        if let Some(parent) = db_path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+                // APPEND & CREATE & OPEN
+                // AUTO CREATE.
+                // ? Belki, CLI info ekle.
+        let mut dosya = OpenOptions::new().append(true).create(true).open(db_path)?;
+        let result_bytes = encode_into_std_write(&self.data, &mut dosya, bincode_cfg)?;
+        println!("Dosya yazıldı: {} bayt. \n İçerik: {:?}", result_bytes, self.data);
+
+        Ok(())
+
+    }
+
+    fn load_db(&self) -> Result<HashMap<String, InternalDataModel>, anyhow::Error> {
+
+        let bincode_cfg = config::standard();
+        let db_path = PathBuf::from(format!("./databases/{}.bin",self.db));
+        
+        let mut dosya = File::open(db_path)?;
+        let mut _hmap = HashMap::new();
+
+        // Dosya sonuna kadar oku, EOF hatası normal
+        loop {
+            match decode_from_std_read::<ExternalDataModel, _,_>(&mut dosya, bincode_cfg) {
+                Ok(record) => {
+                    _hmap.insert(record.key, record.val);
+                },
+                Err(_) => break, // Dosya sonu veya parse hatası - döngüden çık
+            }
+        }
+        
+        println!("Dosya okundu.İçerik: {:?}", _hmap);
+        Ok(_hmap)
+
+     }
+}
+
+/* impl DataMethods for ExternalDataModel {
     fn encode(&self) -> Vec<u8> {
         let bincode_cfg = config::standard();
         bincode::encode_to_vec(self,bincode_cfg).unwrap()
@@ -195,4 +246,4 @@ impl DataMethods for Vec<ExternalDataModel> {
     fn load_db(data_m: DataModel) -> Result<Self, anyhow::Error> where Self: Sized {
         todo!()
     }
-}
+} */
