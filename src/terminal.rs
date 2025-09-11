@@ -1,7 +1,7 @@
 use anyhow::{anyhow, bail, Error};
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
-use crate::parser::RQLParser;
+use crate::parser::parse_query;
 
 /*
 Terminal komutları:
@@ -51,7 +51,7 @@ impl Command {
                 Self::Query { query, file, interactive } => {
                     if let Some(query_string) = query {
                         print!("Debug: \n Sorgu CLI Parsed Edildi: {}",query_string);
-                        RQLParser::parse_query(query_string.to_owned());
+                        parse_query(query_string.to_owned());
                     } else if let Some(file_path) = file {
                         print!("Debug: \n FILE_PATH: {}",file_path.to_str().unwrap());                        
                     } else if interactive {

@@ -8,7 +8,8 @@ use rs_merkle::{Hasher, MerkleProof, MerkleTree};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 use rune::datamodel::{DataModel, Sha256Algorithm};
-use rune::parser::{RQLParser, Rule};
+use rune::query::{RQLParser, CommandExecutor};
+use rune::query::parser::Rule;
  
 /*
 TODO: Şöyle bir tablette dizayn et bakalım, UX açısından nasıl daha iyi hale getirirsin Patricia tree için?
