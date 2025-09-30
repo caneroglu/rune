@@ -6,8 +6,7 @@ use std::collections::HashMap;
 use chrono::Utc;
 use patricia_tree::PatriciaMap;
 
-use crate::query::commands::Komutlar;
-use crate::datamodel::{DataMethods, DataModel, ExternalDataModel, InternalDataModel};
+use crate::{core::storage::*, query::commands::Komutlar};
 
 pub struct CommandExecutor;
 
@@ -45,7 +44,7 @@ impl CommandExecutor {
         let datamodel = DataModel::new(
             ExternalDataModel::new(
                 key, 
-                InternalDataModel::new(Utc::now(), Some(value))
+                InternalDataModel::new(Utc::now().timestamp(), Some(value))
             ), 
             db
         );
@@ -64,7 +63,7 @@ impl CommandExecutor {
         let datamodel = DataModel::new(
             ExternalDataModel::new(
                 key.clone(), 
-                InternalDataModel::new(Utc::now(), None)
+                InternalDataModel::new(Utc::now().timestamp(), None)
             ), 
             db
         );

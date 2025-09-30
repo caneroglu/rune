@@ -4,7 +4,9 @@
 
 use pest::Parser;
 use pest_derive::Parser;
-use crate::query::commands::Komutlar;
+use crate::{core::error::RuneError, query::commands::Komutlar};
+
+
 
 #[derive(Parser)]
 #[grammar = "query/rql.pest"]
@@ -67,8 +69,10 @@ impl RQLParser {
         }
     }
 
+
+
     /// Parse a complete RQL query string
-    pub fn parse_query_string(query: &str) -> Result<Vec<Komutlar>, String> {
+    pub fn parse_query_string(query: &str) -> Result<Vec<Komutlar>, RuneError> {
         let mut commands = Vec::new();
         
         match Self::parse(Rule::program, query) {
@@ -85,7 +89,7 @@ impl RQLParser {
                                     if let Some(parsed_command) = Self::parse_command(komut_adi) {
                                         commands.push(parsed_command);
                                     } else {
-                                        return Err("Failed to parse command".to_string());
+                                        return Err(RuneError::QuerySyntaxError { message:"Hata parser.rs/90".to_owned() });
                                     }
                                 }
                             }
@@ -94,7 +98,7 @@ impl RQLParser {
                 }
                 Ok(commands)
             }
-            Err(_) => Err("Query parse error".to_string())
+            Err(_) => Err(RuneError::IndexError { message: "More ERROR Implementation needed!".to_owned() })
         }
     }
 }

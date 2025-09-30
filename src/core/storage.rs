@@ -22,11 +22,26 @@ pub struct InternalDataModel {
     pub val: Option<String>,
 }
 
+// key kısmını hashmap'tan alacağız. append-only yöntemiyle.
+impl InternalDataModel {
+    pub fn new(ts: i64, val:Option<String>) -> Self {
+        Self { ts, val}
+    }
+}
+
 #[derive(Default,Debug,Clone,Serialize,Deserialize,Encode,Decode)]
 pub struct ExternalDataModel {
     pub key: String,
     pub val: InternalDataModel,
 }
+
+// key kısmını hashmap'tan alacağız. append-only yöntemiyle.
+impl ExternalDataModel {
+    pub fn new(key: String, val: InternalDataModel) -> Self {
+        Self { key, val}
+    }
+}
+
 
 pub trait DataMethods {
     fn encode(&self) -> Vec<u8>;
@@ -93,9 +108,3 @@ impl DataMethods for DataModel {
      }
 }
 
-// key kısmını hashmap'tan alacağız. append-only yöntemiyle.
-impl ExternalDataModel {
-    pub fn new(key: String, val: InternalDataModel) -> Self {
-        Self { key, val}
-    }
-}

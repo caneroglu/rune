@@ -2,42 +2,23 @@ use std::fs::File;
 use bincode::{config, decode_from_std_read, encode_into_std_write};
 use clap::Parser;
 use patricia_tree::PatriciaMap;
-
+ 
 use rs_merkle::{Hasher, MerkleProof, MerkleTree};
- use rune::terminal::{Cli, Command};
+ 
+use rune::cli::interface::Command;
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
-use rune::datamodel::{DataModel, Sha256Algorithm};
+ 
 use rune::query::{RQLParser, CommandExecutor};
 use rune::query::parser::Rule;
  
-/*
-TODO: Şöyle bir tablette dizayn et bakalım, UX açısından nasıl daha iyi hale getirirsin Patricia tree için?
-- Mesela, 2025 -> "a" gibi *encoding* yapabilirsin, bu sayede "a" önek araması yapıldığında hızlıca 2025 için sorgular gelir. *encoding* O(1) olduğundan zamansal olarak yük yok.
-- İkincil Adres defteri DB kullanmak lazım. Eğer NoSQL gibi bir şey olmasını istiyorsam. Simple K/V için geçersiz... *sanırım istiyorum.* Çünkü günlük hayatta kullanabilirim.
-- Ya da belki, iki farklı sürüm yazarım. Birincisi sadece simple K/V diğeri ise döküman tutan gelişmiş versiyonu.
-
-
-TODO: 
-? CHECK query_db -> query'den PATH'ı PASLA -> load_db/save_db -> RUN rest of QUERY -> save_db
-* bu flow'u iyi yap.
  
-? komutları göstermenin kayıtla pek alakası yok.
-
-*/
 
 fn main() -> Result<(), anyhow::Error> {
      Command::parse_command()
 }
 
-fn process_pair(pair: pest::iterators::Pair<Rule>, indent: usize) {
-    let indent_str = "  ".repeat(indent);
-    println!("{}{:?}: {}", indent_str, pair.as_rule(), pair.as_str());
-
-    for inner_pair in pair.into_inner() {
-        process_pair(inner_pair, indent + 1);
-    }
-}
+ 
 
 /*
 
