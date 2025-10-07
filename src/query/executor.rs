@@ -2,18 +2,20 @@
 //! 
 //! This module handles the execution of parsed RQL commands.
 
-use std::collections::HashMap;
+use std::{collections::HashMap, path::{Path, PathBuf}};
+use anyhow::{bail};
 use chrono::Utc;
 use patricia_tree::PatriciaMap;
+use tracing::{error, info};
 
-use crate::{core::storage::*, query::commands::Komutlar};
+use crate::{core::{error::RuneError, storage::*}, query::commands::Komutlar};
 
 pub struct CommandExecutor;
 
 impl CommandExecutor {
     /// Execute a single RQL command
     pub fn execute_command(command: Komutlar) {
-        println!("\n QUERY: {:?}", command);
+        info!("\n QUERY: {:?}", command);
         
         match command {
             Komutlar::Upsert { db, key, value } => {
@@ -38,10 +40,20 @@ impl CommandExecutor {
         }
     }
 
-    fn execute_upsert(db: String, key: String, value: String) {
-        Self::check_file_if_exist(db.clone());
+    fn execute_upsert(db: String, key: String, value: String) -> Result<(), anyhow::Error> {
+        match Self::check_if_file_exist(db) {
+            Ok(db_path) => {
+                let _datamemory = Self::parse_into_memory(db_path)?;
+                info!("Parsed: {:?}", _datamemory);
+                Ok(())
+            },
+            Err(e) => {
+                error!("??");
+                Err(anyhow::Error::from(e))
+            },
+        }
         
-        let datamodel = DataModel::new(
+/*         let datamodel = DataModel::new(
             ExternalDataModel::new(
                 key, 
                 InternalDataModel::new(Utc::now().timestamp(), Some(value))
@@ -49,18 +61,16 @@ impl CommandExecutor {
             db
         );
         println!("{:?}", datamodel);
-        datamodel.save_db();
+        datamodel.save_db(); */
     }
 
     fn execute_delete(db: String, key: String, exact: bool) {
-        Self::check_file_if_exist(db.clone());
-        // TODO: Implement delete logic
+         // TODO: Implement delete logic
     }
 
     fn execute_read(db: String, key: String, exact: bool) {
-        Self::check_file_if_exist(db.clone());
-
-        let datamodel = DataModel::new(
+ 
+ /*        let datamodel = DataModel::new(
             ExternalDataModel::new(
                 key.clone(), 
                 InternalDataModel::new(Utc::now().timestamp(), None)
@@ -95,15 +105,25 @@ impl CommandExecutor {
                 })
                 .collect();
             println!("radix_search: {:?}", _test)
-        }
+        } */
     }
 
     fn execute_rename(db: String, old_key: String, new_key: String) {
-        Self::check_file_if_exist(db.clone());
-        // TODO: Implement rename logic
+         // TODO: Implement rename logic
     }
 
-    fn check_file_if_exist(db_name: String) {
-        println!("\nDB_NAME: {}", db_name)
+    fn check_if_file_exist(db_name: String) -> Result<PathBuf, anyhow::Error> {
+
+        let _path = PathBuf::from(format!("./databases/{}.bin",db_name));
+        
+        if _path.try_exists()? {
+            return Ok(_path)
+        }
+        bail!(RuneError::DatabaseNotFound { db_name })
+ 
+    }
+
+    fn parse_into_memory(db_path: PathBuf) -> Result<DataMemoryModel, anyhow::Error> {
+        Ok(DataMemoryModel::try_from(db_path)?)
     }
 }

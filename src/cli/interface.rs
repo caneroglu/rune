@@ -1,8 +1,9 @@
-use anyhow::{anyhow, bail, Error};
+use anyhow::{anyhow, bail, Error };
 use clap::{Parser, Subcommand};
-use std::path::PathBuf;
+use tracing::{debug, error, info};
+use std::{path::PathBuf, process::exit};
 
-use crate::RQLParser;
+use crate::{query::executor::CommandExecutor, RQLParser};
  
 /*
 Terminal komutları:
@@ -45,15 +46,27 @@ pub enum Command {
     // 'help' komutunu buraya eklemene gerek yok, clap bunu otomatik olarak yönetir.
 }
 
+
 impl Command {
     pub fn parse_command() -> Result<(),anyhow::Error>{
             let cli = Cli::parse();
             match cli.command {
                 Self::Query { query, file, interactive } => {
                     if let Some(query_string) = query {
-                        print!("Debug: \n Sorgu CLI Parsed Edildi: {}",query_string);
-                            // FIXME: BOŞ VEKTÖR DÖNÜYOR!
-                        println!("parse_edilen_komut: {:?}", RQLParser::parse_query_string(&query_string)?)
+                        debug!("Debug: \n Sorgu CLI Parsed Edildi: {}",query_string);
+                        info!("Query is checking...");
+
+                        match RQLParser::parse_query_string(query_string.as_str()) {
+                            Ok(parsed_query) => {
+                                info!("Query is CORRECT: {:?}", parsed_query);
+                                CommandExecutor::execute_command(parsed_query[0].clone());
+                            },
+                            Err(e) => {
+                                error!("Hata: {}", e);
+                                exit(1);
+                            },
+                        }
+
                     } else if let Some(file_path) = file {
                         print!("Debug: \n FILE_PATH: {}",file_path.to_str().unwrap());                        
                     } else if interactive {

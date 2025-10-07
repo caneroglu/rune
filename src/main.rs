@@ -7,14 +7,25 @@ use rs_merkle::{Hasher, MerkleProof, MerkleTree};
  
 use rune::cli::interface::Command;
 use sha2::{Digest, Sha256};
+use tracing::Level;
+use tracing_subscriber::FmtSubscriber;
 use uuid::Uuid;
  
-use rune::query::{RQLParser, CommandExecutor};
+use rune::query::{RQLParser};
 use rune::query::parser::Rule;
  
  
 
 fn main() -> Result<(), anyhow::Error> {
+
+    let std_kolektor = FmtSubscriber::builder()
+    .with_max_level(Level::TRACE)
+    .pretty()
+    .finish();
+
+    tracing::subscriber::set_global_default(std_kolektor)?;
+    
+
      Command::parse_command()
 }
 

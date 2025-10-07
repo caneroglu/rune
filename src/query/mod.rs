@@ -6,4 +6,4 @@ pub mod executor;
 
 pub use commands::Komutlar;
 pub use parser::RQLParser;
-pub use executor::CommandExecutor;
+ 

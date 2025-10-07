@@ -26,8 +26,8 @@ pub enum RuneError {
     KeyNotFoundError { key: String },
 
     // Query hataları
-    #[error("Geçersiz query syntax: {message}")]
-    QuerySyntaxError { message: String },
+    #[error("Hatalı sorgu biçimi.")]
+    QuerySyntaxError,
 
     #[error("Query parse hatası: {0}")]
     QueryParseError(#[from] pest::error::Error<Rule>),
@@ -69,10 +69,5 @@ impl RuneError {
         }
     }
 
-    // Query hatası oluşturmak için
-    pub fn query_syntax_error(message: impl Into<String>) -> Self {
-        RuneError::QuerySyntaxError {
-            message: message.into(),
-        }
-    }
+ 
 }

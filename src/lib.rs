@@ -11,7 +11,7 @@ pub mod cli;
 pub mod config;
 
 // Re-export commonly used types
-pub use query::{Komutlar, RQLParser, CommandExecutor};
+pub use query::{Komutlar, RQLParser};
 
 /*#[cfg(test)]
 mod tests {

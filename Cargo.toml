@@ -5,17 +5,20 @@ edition = "2024"
 
 
 [dependencies]
-patricia_tree = "0.9.0"
-anyhow = "1.0.98"
-thiserror = "2.0.12"
-chrono = {version = "0.4.41", features = ["alloc","serde"]}
-uuid = {version = "1.17.0", features = ["v4","serde"]}
+patricia_tree = {version = "0.10.1", features = ["serde"]}
+anyhow = "1.0.100"
+thiserror = "2.0.17"
+chrono = {version = "0.4.42", features = ["alloc","serde"]}
+uuid = {version = "1.18.1", features = ["v4","serde"]}
 sha2 = "0.10.9"
 rs_merkle = "1.5.0"
 hex = "0.4.3"
 bincode = {version = "2.0.1", features = ["std","serde","derive"]}
-serde = { version = "1.0.219", features = ["derive"] }
-clap = {version = "4.5.40",features = ["derive"]}
+serde = { version = "1.0.228", features = ["derive"] }
+clap = {version = "4.5.48",features = ["derive","color","suggestions","error-context"]}
 
-pest = "2.8.1"
-pest_derive = "2.8.1"
+pest = "2.8.3"
+pest_derive = "2.8.3"
+
+tracing="0.1.41"
+tracing-subscriber={version = "0.3.20", features = ["ansi"]}

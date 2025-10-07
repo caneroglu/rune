@@ -58,34 +58,7 @@ examples/                 # Usage examples
 └── custom_indexing.rs
 ```
 
-## Migration Steps
-
-### Step 1: Create new directory structure
-- [ ] Create `core/`, `query/`, `cli/`, `config/`, `utils/` directories
-- [ ] Create proper `mod.rs` files
-
-### Step 2: Move and refactor existing code
-- [ ] Move `datamodel.rs` content to `core/storage.rs`
-- [ ] Move `parser.rs` to `query/parser.rs`
-- [ ] Move `terminal.rs` to `cli/interface.rs`
-- [ ] Create `core/error.rs` with proper error types
-- [ ] Move `Sha256Algorithm` to `utils/crypto.rs`
-
-### Step 3: Improve separation of concerns
-- [ ] Split `storage.rs` into models and persistence
-- [ ] Create `query/executor.rs` for command execution
-- [ ] Implement `core/engine.rs` as main orchestrator
-
-### Step 4: Add missing components
-- [ ] Implement `config/settings.rs`
-- [ ] Add comprehensive error handling
-- [ ] Create proper test structure
-
-### Step 5: Update dependencies and exports
-- [ ] Update `lib.rs` with new module structure
-- [ ] Fix all imports across the codebase
-- [ ] Update `Cargo.toml` if needed
-
+ 
 ## Benefits of New Structure
 
 1. **Clear Separation of Concerns**: Each module has a specific responsibility

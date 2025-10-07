@@ -89,7 +89,7 @@ impl RQLParser {
                                     if let Some(parsed_command) = Self::parse_command(komut_adi) {
                                         commands.push(parsed_command);
                                     } else {
-                                        return Err(RuneError::QuerySyntaxError { message:"Hata parser.rs/90".to_owned() });
+                                        return Err(RuneError::QuerySyntaxError);
                                     }
                                 }
                             }
@@ -98,7 +98,7 @@ impl RQLParser {
                 }
                 Ok(commands)
             }
-            Err(_) => Err(RuneError::IndexError { message: "More ERROR Implementation needed!".to_owned() })
+            Err(_) => Err(RuneError::QuerySyntaxError)
         }
     }
 }
