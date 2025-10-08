@@ -10,7 +10,7 @@ if query_correct
         run: rest of query with parsed_htable
         switch QUERY_TYPE
             case UPSERT
-                append: new ROW without any changes within htable!
+                
             case READ
                 print: parsed_htable
             case DEL
@@ -22,3 +22,5 @@ else
 
 end
 ```
+
+ 

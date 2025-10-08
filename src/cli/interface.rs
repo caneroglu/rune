@@ -30,10 +30,16 @@ pub enum Command {
         /// Örnek: "+ my_db:user.1=john ; $ my_db.user."
         #[clap(
             value_name = "QUERY_STRING",
-            // Eğer --file veya --interactive bayrakları kullanılmazsa bu argüman zorunludur.
-            required_unless_present_any = ["file", "interactive"]
+            // file veya interactive yoksa en az 1 parça lazım
+            required_unless_present_any = ["file", "interactive"],
+            // bir veya daha fazla argüman topla
+            num_args = 1..,
+            // sonrasını opsiyon olarak yorumlama (örn. -foo gibi şeyler)
+            trailing_var_arg = true,
+            // '-' ile başlayan değerleri kabul et
+            allow_hyphen_values = true
         )]
-        query: Option<String>,
+        query: Option<Vec<String>>,
 
         /// Sorguyu bir dosyadan oku ve çalıştır.
         #[clap(short, long, value_name = "FILE_PATH")]
@@ -47,22 +53,24 @@ pub enum Command {
 }
 
 
+// TODO: 09.10.2025: flag'lar için parsing mekanizmasını implement et. Ardından, smoke *testing* yaz.
+
 impl Command {
     pub fn parse_command() -> Result<(),anyhow::Error>{
             let cli = Cli::parse();
             match cli.command {
                 Self::Query { query, file, interactive } => {
                     if let Some(query_string) = query {
-                        debug!("Debug: \n Sorgu CLI Parsed Edildi: {}",query_string);
+                        debug!("Debug: Sorgu CLI Parsed Edildi: {:?}",query_string);
                         info!("Query is checking...");
-
-                        match RQLParser::parse_query_string(query_string.as_str()) {
+                        let query_concatted= query_string.join(" ");
+                        match RQLParser::parse_query_string(query_concatted.as_str()) {
                             Ok(parsed_query) => {
                                 info!("Query is CORRECT: {:?}", parsed_query);
-                                CommandExecutor::execute_command(parsed_query[0].clone());
+                                CommandExecutor::execute_command(parsed_query);
                             },
                             Err(e) => {
-                                error!("Hata: {}", e);
+                                error!("Hata...: {}", e);
                                 exit(1);
                             },
                         }

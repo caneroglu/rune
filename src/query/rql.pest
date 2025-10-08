@@ -1,6 +1,8 @@
 // Patricia Tree K/V DB Query Language
 
+// ---------- Lexical ----------
 WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+NEWLINE    = _{ "\r\n" | "\n" }
 
 // Operators
 op_upsert = { "+" }
@@ -15,31 +17,45 @@ radix_access = { "." }
 access_mode = { exact_access | radix_access }
 
 // Identifiers
-db_name = @{ (ASCII_ALPHANUMERIC | "_")+ }
+db_name = @{ (ASCII_ALPHANUMERIC | "_") ~ (ASCII_ALPHANUMERIC | "_" | "-")* }
 
-// = , ; ve boşluk hariç her şey.
-key = @{ (!("=" | ";" | WHITESPACE) ~ ANY)+ }
+// ---------- Quoted / Raw tokens ----------
+ESCAPED   = { "\\" ~ ANY }                       // \" \\ \n vs. decode'u yürütme katmanında yap
+DQSTR     = { "\"" ~ (ESCAPED | (!"\"" ~ ANY))* ~ "\"" }
 
-// Value - everything after first =
-value = @{ (!(";" | NEWLINE) ~ ANY)* }
+value_raw = @{ (!(";" | ">" | "[" | NEWLINE) ~ ANY)* }
+key_raw   = @{ (!("=" | ";" | ">" | "[" | WHITESPACE) ~ ANY)+ }
+
+key       = { DQSTR | key_raw }
+value     = { DQSTR | value_raw }
 
 // * : wildcard operatörü eklesem mi yoksa, dinamik olarak mı parse etsem?
 
-// upsert için exact şart - birden fazla key'i aynı değer verilmez.
-upsert_cmd = { op_upsert ~ db_name ~ exact_access ~ key ~ "=" ~ value }
+number = @{ ASCII_DIGIT+ }
+flag   = { "nx" | "xx" | "ttl" ~ "=" ~ number }
+flags  = { ("[" ~ flag ~ ("," ~ flag)* ~ "]")? }
+
+// ---------- Commands ----------
+upsert_cmd = { op_upsert ~ db_name ~ exact_access ~ key ~ "=" ~ value ~ flags }
+// delete/read prefix (radix) veya exact (:) alabilir
 delete_cmd = { op_delete ~ db_name ~ access_mode ~ key }
-read_cmd = { op_read ~ db_name ~ access_mode ~ key }
+read_cmd   = { op_read   ~ db_name ~ access_mode ~ key }
 
 // rename için exact şart - birden fazla key'i aynı isimlendirmek K/V'ye aykırı.
-rename_cmd = { op_rename ~ db_name ~ exact_access ~ key ~ "=" ~ key }
+// rename exact ister; opsiyonel [nx] vb. (örn. yeni ad yoksa)
+rename_cmd = { op_rename ~ db_name ~ exact_access ~ key ~ "=" ~ key ~ flags }
 
 command = { rename_cmd | upsert_cmd | delete_cmd | read_cmd }
 
-// Pipeline
+// ---------- Pipeline ----------
+// '>' quoted dışında ayırıcıdır; key/value RAW hali '>' içeremez.
 pipeline = { command ~ (">" ~ command)+ }
 
-// Statement
-statement = { pipeline | command }
+// ---------- Comments ----------
+COMMENT = _{ "#" ~ (!NEWLINE ~ ANY)* }
 
-// Program
-program = { SOI ~ (statement ~ (";" ~ statement)*)? ~ EOI }
+// ---------- Statement & Program ----------
+statement = { pipeline | command | COMMENT }
+
+// En az bir ifade/yorum beklenir
+program = { SOI ~ statement ~ (";" ~ statement)* ~ EOI }

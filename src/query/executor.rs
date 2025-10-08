@@ -8,38 +8,38 @@ use chrono::Utc;
 use patricia_tree::PatriciaMap;
 use tracing::{error, info};
 
-use crate::{core::{error::RuneError, storage::*}, query::commands::Komutlar};
+use crate::{core::{error::RuneError, storage::*}, query::commands::Komut};
 
 pub struct CommandExecutor;
 
 impl CommandExecutor {
     /// Execute a single RQL command
-    pub fn execute_command(command: Komutlar) {
+    pub fn execute_command(command: Komut) {
         info!("\n QUERY: {:?}", command);
         
         match command {
-            Komutlar::Upsert { db, key, value } => {
+            Komut::Upsert { db, key, value, flags } => {
                 Self::execute_upsert(db, key, value);
             },
-            Komutlar::Delete { db, key, exact } => {
-                Self::execute_delete(db, key, exact);
-            },
-            Komutlar::Read { db, key, exact } => {
+            Komut::Delete { db, key, exact } => {
+                Self::execute_delete(db, key, exact);}
+            Komut::Read { db, key, exact } => {
                 Self::execute_read(db, key, exact);
             },
-            Komutlar::Rename { db, old_key, new_key } => {
+            Komut::Rename { db, old_key, new_key } => {
                 Self::execute_rename(db, old_key, new_key);
             },
         }
     }
 
     /// Execute multiple RQL commands in sequence
-    pub fn execute_commands(commands: Vec<Komutlar>) {
+    pub fn execute_commands(commands: Vec<Komut>) {
         for command in commands {
             Self::execute_command(command);
         }
     }
 
+    //FIXME: key ve val *redundant* gözüküyor. 
     fn execute_upsert(db: String, key: String, value: String) -> Result<(), anyhow::Error> {
         match Self::check_if_file_exist(db) {
             Ok(db_path) => {
@@ -80,11 +80,7 @@ impl CommandExecutor {
         println!("Placeholder - datamodel{:?} \n", datamodel);
         
         let loaded_b = datamodel.load_db().unwrap();
-        // ! SÜREKLİ FİLE RELOAD yapma! CACHE EKLE! Bir kere yükle - read için.
-        // TODO: sorgulanan key'in değerini CLI'ye yansıt.
-        // ! "*" için belki custom READ?
-        // !! PATRICIA'YI IMPLEMENT ET
-        // !!! hashmap'a gerek var mı? direkt PATRICIA'nın hashmap'ına ekleriz?
+ 
 
         let mut p_map = PatriciaMap::new();
         
@@ -123,7 +119,7 @@ impl CommandExecutor {
  
     }
 
-    fn parse_into_memory(db_path: PathBuf) -> Result<DataMemoryModel, anyhow::Error> {
-        Ok(DataMemoryModel::try_from(db_path)?)
+    fn parse_into_memory(db_path: PathBuf) -> Result<DbModel, anyhow::Error> {
+        Ok(DbModel::try_from(db_path)?)
     }
 }

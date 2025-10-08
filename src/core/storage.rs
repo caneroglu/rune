@@ -12,20 +12,19 @@ use crate::core::error::RuneError;
 // for Pest.rs Parsing. Sadece dosya okumak ve kaydetmek için.
 // girilen QUERY'i parse etmek için.
 #[derive(Default, Debug, Clone, Serialize, Deserialize, Encode, Decode)]
-pub struct DataModel {
+pub struct DbModel {
      //tabiatı itibariyle k/v array.
-    // .bin'de string:internaldatamodel olarak kaydet.
-    pub data: ExternalDataModel,
-    pub db: String,
+    pub table: DataModel,
+    pub db_path: PathBuf,
 }
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize, Encode, Decode)]
-pub struct DataMemoryModel {
-        #[bincode(with_serde)]
+pub struct DataModel {
+    #[bincode(with_serde)]
     pub data: GenericPatriciaMap<String, InternalDataModel>,
 }
 
-impl DataMemoryModel {
+impl DataModel {
     pub fn new() -> Self{
         Self { data: GenericPatriciaMap::new() }
     }
@@ -67,16 +66,11 @@ pub trait DataMethods {
     fn load_db(&self) -> Result<HashMap<String, InternalDataModel>, anyhow::Error>;
 }
 
-
-impl DataModel {
-/*     pub fn new() -> Self {
-        Self { data: GenericPatriciaMap::new(), db:String::new() }
-    }  */
-}
+ 
 
 // ?: Direkt GenericPatriciaMap olarak kaydedip okuyabiliriz. Fakat, temiz kod için değer mi? - TEST ET!
 
-impl TryFrom<PathBuf> for DataMemoryModel {
+impl TryFrom<PathBuf> for DataModel {
     type Error = RuneError;
 
     fn try_from(db_path: PathBuf) -> Result<Self, Self::Error> {
@@ -99,7 +93,32 @@ impl TryFrom<PathBuf> for DataMemoryModel {
     }
 }
 
-impl DataMethods for DataModel {
+
+impl TryFrom<PathBuf> for DbModel {
+    type Error = RuneError;
+
+    fn try_from(db_path: PathBuf) -> Result<Self, Self::Error> {
+        let bincode_cfg = config::standard();
+        let mut dosya = File::open(&db_path)?;
+
+        let mut _self = Self::default();
+        _self.db_path = db_path;
+        // Dosya sonuna kadar oku, EOF hatası normal
+        loop {
+            match decode_from_std_read::<ExternalDataModel, _,_>(&mut dosya, bincode_cfg) {
+                Ok(row) => {
+                    _self.table.data.insert(row.key, row.val);
+                },
+                Err(_) => break, // Dosya sonu veya parse hatası - döngüden çık
+            }
+        }
+ 
+        Ok(_self)
+
+    }
+}
+
+impl DataMethods for DbModel {
     fn encode(&self) -> Vec<u8> {
         todo!()
     }
@@ -128,7 +147,8 @@ impl DataMethods for DataModel {
 
     fn load_db(&self) -> Result<HashMap<String, InternalDataModel>, anyhow::Error> {
 
-        let bincode_cfg = config::standard();
+        todo!();
+/*         let bincode_cfg = config::standard();
         let db_path = PathBuf::from(format!("./databases/{}.bin",self.db));
         
         let mut dosya = File::open(db_path)?;
@@ -145,7 +165,7 @@ impl DataMethods for DataModel {
         }
         
         println!("Dosya okundu.İçerik: {:?}", _hmap);
-        Ok(_hmap)
+        Ok(_hmap) */
 
      }
 }

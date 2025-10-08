@@ -4,6 +4,6 @@ pub mod commands;
 pub mod parser;
 pub mod executor;
 
-pub use commands::Komutlar;
+pub use commands::Komut;
 pub use parser::RQLParser;
  

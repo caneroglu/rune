@@ -1,11 +1,13 @@
 //! Command definitions for the Rune Query Language (RQL)
 
 #[derive(Debug, Clone)]
-pub enum Komutlar {
+pub enum Komut {
     Upsert { 
         db: String, 
         key: String, 
-        value: String 
+        value: String,
+        // FIXME!: ayrı ayrı parse et, çünkü birden fazla *flag* olabilir. parse ettiğin flag'lara göre, ayrı ayrı mekanizma tasarla.
+        flags: Option<String>,
     },
     Delete { 
         db: String, 
