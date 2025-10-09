@@ -5,8 +5,8 @@
 use anyhow::{bail};
 use pest::Parser;
 use pest_derive::Parser;
-use tracing::debug;
-use crate::{core::error::RuneError, query::commands::{Komut}};
+use tracing::{debug, info};
+use crate::{core::error::RuneError, query::commands::{Komut, ParserFlags}};
 
 
 
@@ -39,7 +39,7 @@ impl RQLParser {
             let mut db = String::new();
             let mut key = String::new();
             let mut value = String::new();
-            let mut flags_str: Option<String> = None;
+            let mut flags: Option<Vec<ParserFlags>> = None;
 
             // upsert_cmd = op_upsert ~ db_name ~ exact_access ~ key ~ "=" ~ value ~ flags
             for p in ikili.into_inner() {
@@ -47,15 +47,26 @@ impl RQLParser {
                     Rule::db_name => db = p.as_str().to_string(),
                     Rule::key     => key = p.as_str().to_string(),
                     Rule::value   => value = p.as_str().to_string(),
-                    Rule::flags if !p.as_str().is_empty()  => {
-                        flags_str = Some(p.as_str().to_string());
-                    }
+                    Rule::flags if !p.as_str().is_empty() => flags = Some(p.as_str()[1..p.as_str().len()-1].split(",").map(|el| {
+                        match &el.to_ascii_lowercase().chars().filter(|ch| !ch.is_whitespace()).collect::<String>()[..] {
+                            "nx" => ParserFlags::NX,
+                            "xx" => ParserFlags::XX,
+                            val if val.starts_with("ttl=") => {
+                                 match u32::from_str_radix(&val[val.find("=").unwrap() + 1..], 10) {
+                                    Ok(parsed_ttl_val) => {
+                                        ParserFlags::TTL(parsed_ttl_val)},
+                                    Err(_) => ParserFlags::None,
+                                }
+                            }
+                            _ => ParserFlags::None 
+                        }
+                    }).collect()),
                     // Bunlar yapısal/süs: operator, exact_access, "=" – görmezden gel
                     Rule::op_upsert | Rule::exact_access => {}
                     _ => {}
                 }
             }
-            return Some(Komut::Upsert { db, key, value, flags: flags_str });
+            return Some(Komut::Upsert { db, key, value, flags });
            },
             Rule::read_cmd => {
                 let mut db = String::new();

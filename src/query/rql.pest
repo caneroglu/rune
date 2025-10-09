@@ -32,7 +32,7 @@ value     = { DQSTR | value_raw }
 // * : wildcard operatörü eklesem mi yoksa, dinamik olarak mı parse etsem?
 
 number = @{ ASCII_DIGIT+ }
-flag   = { "nx" | "xx" | "ttl" ~ "=" ~ number }
+flag   = { ^"nx" | ^"xx" | ^"ttl" ~ "=" ~ number }
 flags  = { ("[" ~ flag ~ ("," ~ flag)* ~ "]")? }
 
 // ---------- Commands ----------
