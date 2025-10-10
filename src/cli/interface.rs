@@ -53,8 +53,6 @@ pub enum Command {
 }
 
 
-// TODO: 09.10.2025: flag'lar için parsing mekanizmasını implement et. Ardından, smoke *testing* yaz.
-
 impl Command {
     pub fn parse_command() -> Result<(),anyhow::Error>{
             let cli = Cli::parse();
@@ -74,7 +72,6 @@ impl Command {
                                 exit(1);
                             },
                         }
-
                     } else if let Some(file_path) = file {
                         print!("Debug: \n FILE_PATH: {}",file_path.to_str().unwrap());                        
                     } else if interactive {

@@ -6,7 +6,6 @@ pub enum Komut {
         db: String, 
         key: String, 
         value: String,
-        // FIXME!: ayrı ayrı parse et, çünkü birden fazla *flag* olabilir. parse ettiğin flag'lara göre, ayrı ayrı mekanizma tasarla.
         flags: Option<Vec<ParserFlags>>,
     },
     Delete { 

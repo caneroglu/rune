@@ -24,9 +24,7 @@ fn main() -> Result<(), anyhow::Error> {
     .finish();
 
     tracing::subscriber::set_global_default(std_kolektor)?;
-    
-
-     Command::parse_command()
+    Command::parse_command()
 }
 
  

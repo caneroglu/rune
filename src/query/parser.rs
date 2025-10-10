@@ -153,7 +153,7 @@ impl RQLParser {
                         }
                     }
                 }
-                Err(RuneError::QuerySyntaxError)
+                Err(RuneError::QuerySyntaxError) // bak bakalım.
             }
             Err(_) => Err(RuneError::QuerySyntaxError)
         }

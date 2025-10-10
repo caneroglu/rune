@@ -14,12 +14,12 @@ pub struct CommandExecutor;
 
 impl CommandExecutor {
     /// Execute a single RQL command
-    pub fn execute_command(command: Komut) {
+    pub fn execute_command(command: Komut) -> Result<usize, anyhow::Error> {
         info!("\n QUERY: {:?}", command);
         
         match command {
             Komut::Upsert { db, key, value, flags } => {
-                Self::execute_upsert(db, key, value);
+                Self::execute_upsert(db, key, value)?;
             },
             Komut::Delete { db, key, exact } => {
                 Self::execute_delete(db, key, exact);}
