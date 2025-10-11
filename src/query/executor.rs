@@ -14,7 +14,7 @@ pub struct CommandExecutor;
 
 impl CommandExecutor {
     /// Execute a single RQL command
-    pub fn execute_command(command: Komut) -> Result<usize, anyhow::Error> {
+    pub fn execute_command(command: Komut) -> Result<u64, anyhow::Error> {
         info!("\n QUERY: {:?}", command);
         
         match command {
@@ -40,17 +40,22 @@ impl CommandExecutor {
     }
 
     //FIXME: key ve val *redundant* gözüküyor. 
-    fn execute_upsert(db: String, key: String, value: String) -> Result<(), anyhow::Error> {
+    fn execute_upsert(db: String, key: String, value: String) -> Result<usize, anyhow::Error> {
+
+         
         match Self::check_if_file_exist(db) {
             Ok(db_path) => {
                 let _datamemory = Self::parse_into_memory(db_path)?;
                 info!("Parsed: {:?}", _datamemory);
-                Ok(())
+
+P
+
             },
             Err(e) => {
                 error!("??");
                 Err(anyhow::Error::from(e))
             },
+
         }
         
 /*         let datamodel = DataModel::new(
