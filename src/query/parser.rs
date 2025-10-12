@@ -16,7 +16,7 @@ pub struct RQLParser;
 
 impl RQLParser {
     /// Parse a single command from a pest Pair
-    pub fn parse_command(ikili: pest::iterators::Pair<Rule>) -> Option<Komut> {
+    fn parse_command(ikili: pest::iterators::Pair<Rule>) -> Option<Komut> {
         match ikili.as_rule() {
 /*             Rule::upsert_cmd => {
                 let mut inner = ikili.into_inner();
@@ -130,7 +130,7 @@ impl RQLParser {
 
 
     /// Parse a complete RQL query string
-    pub fn parse_query_string(query: &str) -> Result<Komut, RuneError> {
+    pub fn parse_query(query: &str) -> Result<Komut, RuneError> {
         match Self::parse(Rule::program, query) {
             Ok(mut pairs) => {
                 for pair in pairs {

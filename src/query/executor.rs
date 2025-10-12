@@ -39,7 +39,7 @@ impl CommandExecutor {
         }
     }
 
-    //FIXME: key ve val *redundant* gözüküyor. 
+  
     fn execute_upsert(db: String, key: String, value: String) -> Result<usize, anyhow::Error> {
 
          
@@ -123,6 +123,7 @@ P
         bail!(RuneError::DatabaseNotFound { db_name })
  
     }
+    
 
     fn parse_into_memory(db_path: PathBuf) -> Result<DbModel, anyhow::Error> {
         Ok(DbModel::try_from(db_path)?)

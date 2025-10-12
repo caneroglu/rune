@@ -3,6 +3,8 @@
 use std::{collections::HashMap, fs::{self, File, OpenOptions}, path::PathBuf};
 use anyhow::{bail};
 use bincode::{config, decode_from_std_read, encode_into_std_write, Decode, Encode};
+use chrono::Utc;
+use crc32fast::Hasher;
 use patricia_tree::{GenericPatriciaMap, PatriciaMap};
 use serde::{Deserialize, Serialize};
 use tracing::info;
@@ -23,6 +25,9 @@ pub struct DataModel {
     #[bincode(with_serde)]
     pub data: GenericPatriciaMap<String, InternalDataModel>,
 }
+
+
+
 
 // Dosya adı = veritabanı adı.
 #[derive(Default,Debug,Clone,Serialize,Deserialize,Encode,Decode)]
@@ -169,4 +174,84 @@ impl DbModel {
     fn load_db(db_path: PathBuf) -> Result<Self, anyhow::Error> {
         Self::try_from(db_path).map_err(|e|e.into())
     }
+
+    fn append_db(db_path: PathBuf) -> Result<(), anyhow::Error>{
+        let bincode_cfg: config::Configuration = config::standard();
+        info!("db_path_debug:{:?}", db_path);
+
+        // * .DB dosyasının sonuna .APPEND et.
+        let mut dosya = OpenOptions::new().append(true).open(&db_path)?;
+
+
+    }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, Encode, Decode)]
+pub struct Record {
+    pub key: String,
+    pub val: Option<String>, //None olabilir, anahtar var ama henüz değer yok. - TOMBSTONE - DEĞİL!
+    key_hash: u64,
+    ts: i64, //timestamp
+    pub prev_off: u64, //key'in varsa önceki dosya offseti
+    key_len: usize,
+    val_len: usize,
+    pub schema_ver: SchemaVersion, //ilerde güncelleme olursa,
+    pub tombstone: u8, //bitmask
+    crc32: u32 //crc hash - veri bozulma kontrolü için
+}
+
+impl Record {
+    pub fn append_record(&self, path: PathBuf) -> Result<usize,anyhow::Error> {
+        let cfg = bincode_cfg();
+        // CREATE gereksiz ÇÜNKÜ APPEND!
+        let mut f = OpenOptions::new().append(true).open(&path)?;
+        encode_into_std_write(&path, &mut f, cfg).map_err(|e| e.into())
+    }
+
+    pub fn new(key: String, val: Option<String>, prev_off: u64, schema_ver: SchemaVersion, tombstone: u8) -> Self {
+        let ts = Utc::now().timestamp_millis();
+        // TODO: Implement 'key_hash' from merklee tree.
+        let mut hasher = Hasher::new();
+ 
+        match schema_ver {
+            SchemaVersion::V1 => {
+
+                let _self = Self {
+                    key,
+                    val,
+                    // ! not implemented yet!
+                    key_hash: 0,
+                    ts,
+                    prev_off,
+                    key_len: key.len(),
+                    // !!
+                    val_len: val.unwrap().len(),
+                    schema_ver,
+                    tombstone,
+                    crc32: 0
+                };
+
+                // !! 13.10.25 -> encode + u8 diziye çevirmeyi dene olmazsa direkt trait implement et veya '.as_bytes' yardımcı metodu ekle.
+                hasher.update(&_self.encode(encoder).as_bytes);
+
+                _self
+
+
+
+            },
+            _ => unimplemented!()
+        }
+
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Encode, Decode)]
+enum SchemaVersion {
+    V1
+    // ilerde belki *v2* falan.
+}
+
+ fn bincode_cfg() -> impl bincode::config::Config {
+    bincode::config::standard()
+ }
+ 

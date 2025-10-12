@@ -62,7 +62,7 @@ impl Command {
                         debug!("Debug: Sorgu CLI Parsed Edildi: {:?}",query_string);
                         info!("Query is checking...");
                         let query_concatted= query_string.join(" ");
-                        match RQLParser::parse_query_string(query_concatted.as_str()) {
+                        match RQLParser::parse_query(query_concatted.as_str()) {
                             Ok(parsed_query) => {
                                 info!("Query is CORRECT: {:?}", parsed_query);
                                 CommandExecutor::execute_command(parsed_query);
