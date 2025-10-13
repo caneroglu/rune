@@ -1,94 +1,91 @@
 //! Command execution engine for RQL commands
-//! 
+//!
 //! This module handles the execution of parsed RQL commands.
 
-use std::{collections::HashMap, path::{Path, PathBuf}};
-use anyhow::{bail};
-use chrono::Utc;
-use patricia_tree::PatriciaMap;
+use anyhow::bail;
+use std::path::PathBuf;
 use tracing::{error, info};
 
-use crate::{core::{error::RuneError, storage::*}, query::commands::Komut};
+use crate::{
+    core::{error::RuneError, storage::*},
+    query::commands::Komut,
+};
 
 pub struct CommandExecutor;
 
 impl CommandExecutor {
     /// Execute a single RQL command
-    pub fn execute_command(command: Komut) -> Result<u64, anyhow::Error> {
-        info!("\n QUERY: {:?}", command);
-        
+    pub fn execute_query_command(command: Komut) -> Result<ParseResult, anyhow::Error> {
+
+        info!("Execute_query_command called: {:?}", command);
+
         match command {
-            Komut::Upsert { db, key, value, flags } => {
-                Self::execute_upsert(db, key, value)?;
-            },
-            Komut::Delete { db, key, exact } => {
-                Self::execute_delete(db, key, exact);}
+
+            Komut::Upsert {
+                db,
+                key,
+                value,
+                flags,
+            } => Ok(ParseResult::TotalWritten(Self::execute_upsert(
+                db, key, value,
+            )?)),
+
+            Komut::Delete { db, key, exact } => Ok(ParseResult::TotalWritten(
+                Self::execute_delete(db, key, exact)?,
+            )),
+
             Komut::Read { db, key, exact } => {
-                Self::execute_read(db, key, exact);
+                Ok(ParseResult::Records(Self::execute_read(db, key, exact)?))
             },
-            Komut::Rename { db, old_key, new_key } => {
-                Self::execute_rename(db, old_key, new_key);
-            },
+
+            Komut::Rename {
+                db,
+                old_key,
+                new_key,
+            } => Ok(ParseResult::TotalWritten(Self::execute_rename(
+                db, old_key, new_key,
+            )?)),
         }
+
     }
 
-    /// Execute multiple RQL commands in sequence
-    pub fn execute_commands(commands: Vec<Komut>) {
-        for command in commands {
-            Self::execute_command(command);
-        }
-    }
-
-  
-    fn execute_upsert(db: String, key: String, value: String) -> Result<usize, anyhow::Error> {
-
-         
+    fn execute_upsert(db: String, key: String, val: String) -> Result<usize, anyhow::Error> {
         match Self::check_if_file_exist(db) {
             Ok(db_path) => {
-                let _datamemory = Self::parse_into_memory(db_path)?;
-                info!("Parsed: {:?}", _datamemory);
-
-P
-
-            },
+                //! 'Some(val)' yerine başka ve daha iyi bir sorgu ve kontrol sağla.
+                // TODO: 'prev_off' hesapla.
+                let appending_record = Record::new(key, Some(val), 00012, SchemaVersion::V1, 1);
+                appending_record.append_record(db_path)
+            }
             Err(e) => {
                 error!("??");
-                Err(anyhow::Error::from(e))
-            },
-
+                Err(e)
+            }
         }
-        
-/*         let datamodel = DataModel::new(
-            ExternalDataModel::new(
-                key, 
-                InternalDataModel::new(Utc::now().timestamp(), Some(value))
-            ), 
-            db
-        );
-        println!("{:?}", datamodel);
-        datamodel.save_db(); */
     }
 
-    fn execute_delete(db: String, key: String, exact: bool) {
-         // TODO: Implement delete logic
+    fn execute_delete(db: String, key: String, exact: bool) -> Result<usize, anyhow::Error> {
+        // TODO: Implement delete logic
+        todo!()
     }
 
-    fn execute_read(db: String, key: String, exact: bool) {
- 
- /*        let datamodel = DataModel::new(
+    fn execute_read(db: String, key: String, exact: bool) -> Result<Vec<Record>, anyhow::Error> {
+        todo!()
+
+        /*        let datamodel = DataModel::new(
             ExternalDataModel::new(
-                key.clone(), 
+                key.clone(),
                 InternalDataModel::new(Utc::now().timestamp(), None)
-            ), 
+            ),
             db
         );
         println!("Placeholder - datamodel{:?} \n", datamodel);
-        
+
         let loaded_b = datamodel.load_db().unwrap();
- 
+
 
         let mut p_map = PatriciaMap::new();
-        
+
         loaded_b.iter().for_each(|(k, v)| {
             p_map.insert(k, v);
         });
@@ -96,11 +93,11 @@ P
         println!("Loaded patricia_map: {:?} \n", p_map);
 
         if exact {
-            println!("exact_key_search: {:?}", p_map.get(&key))                                            
+            println!("exact_key_search: {:?}", p_map.get(&key))
         } else {
             let _test: HashMap<String, InternalDataModel> = p_map
                 .iter_prefix(key.as_bytes())
-                .map(|(k, &v)| { 
+                .map(|(k, &v)| {
                     let s = String::from_utf8(k).unwrap();
                     (s, v.clone())
                 })
@@ -109,23 +106,30 @@ P
         } */
     }
 
-    fn execute_rename(db: String, old_key: String, new_key: String) {
-         // TODO: Implement rename logic
+    fn execute_rename(
+        db: String,
+        old_key: String,
+        new_key: String,
+    ) -> Result<usize, anyhow::Error> {
+        // TODO: Implement rename logic
+        todo!()
     }
 
     fn check_if_file_exist(db_name: String) -> Result<PathBuf, anyhow::Error> {
+        let _path = PathBuf::from(format!("./databases/{}.bin", db_name));
 
-        let _path = PathBuf::from(format!("./databases/{}.bin",db_name));
-        
         if _path.try_exists()? {
-            return Ok(_path)
+            return Ok(_path);
         }
         bail!(RuneError::DatabaseNotFound { db_name })
- 
     }
-    
 
     fn parse_into_memory(db_path: PathBuf) -> Result<DbModel, anyhow::Error> {
         Ok(DbModel::try_from(db_path)?)
+    }
+
+    /// Execute multiple RQL commands in sequence
+    pub fn execute_commands(commands: Vec<Komut>) {
+        unimplemented!("Sonra.");
     }
 }

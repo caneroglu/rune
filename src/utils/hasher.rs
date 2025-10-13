@@ -1,6 +1,5 @@
 use rs_merkle::Hasher;
-use sha2::{Sha256, Digest, digest::FixedOutput};
-
+use sha2::{Digest, Sha256, digest::FixedOutput};
 
 #[derive(Clone)]
 pub struct Sha256Algorithm {}
@@ -15,5 +14,4 @@ impl Hasher for Sha256Algorithm {
         hasher.update(data);
         <[u8; 32]>::from(hasher.finalize_fixed())
     }
-    
 }

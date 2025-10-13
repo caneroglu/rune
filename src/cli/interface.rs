@@ -1,10 +1,9 @@
-use anyhow::{anyhow, bail, Error };
+use anyhow::anyhow;
 use clap::{Parser, Subcommand};
-use tracing::{debug, error, info};
 use std::{path::PathBuf, process::exit};
+use tracing::{error, info};
+use crate::{core::storage::ParseResult, query::executor::CommandExecutor, RQLParser};
 
-use crate::{query::executor::CommandExecutor, RQLParser};
- 
 /*
 Terminal komutları:
 
@@ -12,7 +11,6 @@ rune create db _db_name_
 rune query _query_
 */
 
- 
 /// Patricia Tree K/V DB için bir CLI aracı.
 /// Sorgu çalıştırmak için 'rune query'.
 #[derive(Parser, Debug)]
@@ -52,35 +50,40 @@ pub enum Command {
     // 'help' komutunu buraya eklemene gerek yok, clap bunu otomatik olarak yönetir.
 }
 
-
 impl Command {
-    pub fn parse_command() -> Result<(),anyhow::Error>{
-            let cli = Cli::parse();
-            match cli.command {
-                Self::Query { query, file, interactive } => {
-                    if let Some(query_string) = query {
-                        debug!("Debug: Sorgu CLI Parsed Edildi: {:?}",query_string);
-                        info!("Query is checking...");
-                        let query_concatted= query_string.join(" ");
-                        match RQLParser::parse_query(query_concatted.as_str()) {
-                            Ok(parsed_query) => {
-                                info!("Query is CORRECT: {:?}", parsed_query);
-                                CommandExecutor::execute_command(parsed_query);
-                            },
-                            Err(e) => {
-                                error!("Hata...: {}", e);
-                                exit(1);
-                            },
+    pub fn parse_command() -> Result<ParseResult, anyhow::Error> {
+        let cli = Cli::parse();
+        match cli.command {
+            Self::Query {
+                query,
+                file,
+                interactive,
+            } => {
+                if let Some(query_string) = query {
+                    info!("CLI parse_command CALLED: {:?}", query_string);
+                    info!("Query validation started...");
+                    let query_concatted = query_string.join(" ");
+                    match RQLParser::parse_query(query_concatted.as_str()) {
+                        Ok(parsed_query) => {
+                            info!("Query is CORRECT!... Calling execute_query_command...");
+                            return CommandExecutor::execute_query_command(parsed_query)
                         }
-                    } else if let Some(file_path) = file {
-                        print!("Debug: \n FILE_PATH: {}",file_path.to_str().unwrap());                        
-                    } else if interactive {
-                        print!("Debug: \n REPLY MODE");
-                    } else {
-                        return Err(anyhow!("CLI Parsing Error."));
+                        Err(e) => {
+                            error!("Query is WRONG!: {}", e);
+                            exit(1);
+                        }
                     }
+                } else if let Some(file_path) = file {
+                    print!("Debug: \n FILE_PATH: {}", file_path.to_str().unwrap());
+                    todo!()
+                } else if interactive {
+                    print!("Debug: \n REPLY MODE");
+                    todo!()
+                } else {
+                    return Err(anyhow!("CLI Parsing Error."));
                 }
             }
-        Ok(())
+        }
+
     }
 }

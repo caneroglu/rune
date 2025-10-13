@@ -1,2 +1,2 @@
-pub mod hasher;
 pub mod converters;
+pub mod hasher;

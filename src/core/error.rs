@@ -1,5 +1,5 @@
-use thiserror::Error;
 use crate::query::parser::Rule;
+use thiserror::Error;
 
 // TODO: Serde için daha elegant hata tipi tanımla.
 #[derive(Error, Debug)]
@@ -64,10 +64,6 @@ impl RuneError {
 
     // Key hatası oluşturmak için
     pub fn key_not_found(key: impl Into<String>) -> Self {
-        RuneError::KeyNotFoundError {
-            key: key.into(),
-        }
+        RuneError::KeyNotFoundError { key: key.into() }
     }
-
- 
 }

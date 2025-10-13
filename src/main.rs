@@ -1,36 +1,32 @@
-use std::fs::File;
-use bincode::{config, decode_from_std_read, encode_into_std_write};
-use clap::Parser;
-use patricia_tree::PatriciaMap;
- 
-use rs_merkle::{Hasher, MerkleProof, MerkleTree};
- 
+use anyhow::Ok;
 use rune::cli::interface::Command;
-use sha2::{Digest, Sha256};
+use rune::core::storage::Record;
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
-use uuid::Uuid;
- 
-use rune::query::{RQLParser};
-use rune::query::parser::Rule;
- 
- 
+use rune::core::storage::SchemaVersion;
 
 fn main() -> Result<(), anyhow::Error> {
-
     let std_kolektor = FmtSubscriber::builder()
-    .with_max_level(Level::TRACE)
-    .pretty()
-    .finish();
+        .with_max_level(Level::TRACE)
+        .pretty()
+        .finish();
 
+    let a = Record::new(
+        "deneme".to_owned(),
+        Some("val_dene".to_owned()),
+        5251,
+        SchemaVersion::V1,
+        0,
+    );
+
+    println!("debug_record: {:?}", a);
     tracing::subscriber::set_global_default(std_kolektor)?;
-    Command::parse_command()
+    Command::parse_command()?;
+
+    Ok(())
 }
 
- 
-
 /*
-
     let v1 = DataModel::new(
         "main".to_string(),
         chrono::Utc::now(),

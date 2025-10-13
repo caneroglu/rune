@@ -2,26 +2,26 @@
 
 #[derive(Debug, Clone)]
 pub enum Komut {
-    Upsert { 
-        db: String, 
-        key: String, 
+    Upsert {
+        db: String,
+        key: String,
         value: String,
         flags: Option<Vec<ParserFlags>>,
     },
-    Delete { 
-        db: String, 
-        key: String, 
-        exact: bool 
+    Delete {
+        db: String,
+        key: String,
+        exact: bool,
     },
-    Read { 
-        db: String, 
-        key: String, 
-        exact: bool 
+    Read {
+        db: String,
+        key: String,
+        exact: bool,
     },
-    Rename { 
-        db: String, 
-        old_key: String, 
-        new_key: String
+    Rename {
+        db: String,
+        old_key: String,
+        new_key: String,
     },
 }
 
