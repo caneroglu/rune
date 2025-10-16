@@ -2,13 +2,13 @@
 //!
 //! This module handles the execution of parsed RQL commands.
 
-use anyhow::bail;
+use anyhow::{bail, Ok};
 use std::path::PathBuf;
 use tracing::{error, info};
 
 use crate::{
     core::{error::RuneError, storage::*},
-    query::commands::Komut,
+    query::commands::{Komut, ParserFlags},
 };
 
 pub struct CommandExecutor;
@@ -21,14 +21,15 @@ impl CommandExecutor {
 
         match command {
 
+            // 
+
             Komut::Upsert {
-                db,
+                db_name,
+                db_path,
                 key,
-                value,
+                val,
                 flags,
-            } => Ok(ParseResult::TotalWritten(Self::execute_upsert(
-                db, key, value,
-            )?)),
+            } => Self::execute_upsert(db_name, key, val, flags),
 
             Komut::Delete { db, key, exact } => Ok(ParseResult::TotalWritten(
                 Self::execute_delete(db, key, exact)?,
@@ -45,14 +46,20 @@ impl CommandExecutor {
             } => Ok(ParseResult::TotalWritten(Self::execute_rename(
                 db, old_key, new_key,
             )?)),
+            
         }
 
     }
 
-    fn execute_upsert(db: String, key: String, val: String) -> Result<usize, anyhow::Error> {
-        match Self::check_if_file_exist(db) {
+    // Sınırlayabiliyor muyuz?
+
+    fn execute_upsert(object: Komut) -> Result<ParseResult, anyhow::Error> {
+
+        Komut::new_upsert_cmd(db_name, key, val, flags)
+
+        match Self::check_if_file_exist(db_name) {
             Ok(db_path) => {
-                //! 'Some(val)' yerine başka ve daha iyi bir sorgu ve kontrol sağla.
+                // ! 'Some(val)' yerine başka ve daha iyi bir sorgu ve kontrol sağla.
                 // TODO: 'prev_off' hesapla.
                 let appending_record = Record::new(key, Some(val), 00012, SchemaVersion::V1, 1);
                 appending_record.append_record(db_path)
@@ -62,6 +69,7 @@ impl CommandExecutor {
                 Err(e)
             }
         }
+
     }
 
     fn execute_delete(db: String, key: String, exact: bool) -> Result<usize, anyhow::Error> {

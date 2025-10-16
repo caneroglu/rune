@@ -24,9 +24,13 @@ ESCAPED   = { "\\" ~ ANY }                       // \" \\ \n vs. decode'u yürü
 DQSTR     = { "\"" ~ (ESCAPED | (!"\"" ~ ANY))* ~ "\"" }
 
 value_raw = @{ (!(";" | ">" | "[" | NEWLINE) ~ ANY)* }
-key_raw   = @{ (!("=" | ";" | ">" | "[" | WHITESPACE) ~ ANY)+ }
+key_raw   = @{ (!("=" | ";" | ">" | "[" | WHITESPACE | "*") ~ ANY)+ }
+wildcard  = { "*" }
 
-key       = { DQSTR | key_raw }
+key_part  = { key_raw | wildcard }
+key_pattern = { key_part+ }
+
+key       = { DQSTR | key_pattern }
 value     = { DQSTR | value_raw }
 
 // * : wildcard operatörü eklesem mi yoksa, dinamik olarak mı parse etsem?
@@ -34,12 +38,14 @@ value     = { DQSTR | value_raw }
 number = @{ ASCII_DIGIT+ }
 flag   = { ^"nx" | ^"xx" | ^"ttl" ~ "=" ~ number }
 flags  = { ("[" ~ flag ~ ("," ~ flag)* ~ "]")? }
+range_specifier = { "[" ~ number? ~ ":" ~ number? ~ "]" }
+
 
 // ---------- Commands ----------
-upsert_cmd = { op_upsert ~ db_name ~ exact_access ~ key ~ "=" ~ value ~ flags }
+upsert_cmd = { op_upsert ~ db_name ~ access_mode ~ key ~ "=" ~ value ~ flags }
 // delete/read prefix (radix) veya exact (:) alabilir
 delete_cmd = { op_delete ~ db_name ~ access_mode ~ key }
-read_cmd   = { op_read   ~ db_name ~ access_mode ~ key }
+read_cmd   = { op_read ~ db_name ~ access_mode ~ key ~ range_specifier? }
 
 // rename için exact şart - birden fazla key'i aynı isimlendirmek K/V'ye aykırı.
 // rename exact ister; opsiyonel [nx] vb. (örn. yeni ad yoksa)

@@ -1,7 +1,7 @@
 // # Data models and persistence
 
 use crate::core::error::RuneError;
-use anyhow::bail;
+use anyhow::{bail};
 use bincode::{Decode, Encode, config, decode_from_std_read, encode_into_std_write, encode_to_vec};
 use chrono::Utc;
 use crc32fast::Hasher;
@@ -211,11 +211,15 @@ pub struct Record {
 }
 
 impl Record {
-    pub fn append_record(&self, path: PathBuf) -> Result<usize, anyhow::Error> {
+    pub fn append_record(&self, path: PathBuf) -> Result<ParseResult, anyhow::Error> {
         let cfg = bincode_cfg();
         // CREATE gereksiz ÇÜNKÜ APPEND!
         let mut f = OpenOptions::new().append(true).open(&path)?;
-        encode_into_std_write(&path, &mut f, cfg).map_err(|e| e.into())
+        match encode_into_std_write(&path, &mut f, cfg) {
+            Ok(written_bytes) => Ok(ParseResult::TotalWritten(written_bytes)),
+            Err(e) => Err(anyhow::Error::from(e))
+        }
+  
     }
 
     pub fn new(
@@ -257,6 +261,35 @@ impl Record {
             }
             _ => unimplemented!(),
         }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Encode, Decode)]
+pub struct RecordsTree {
+        #[bincode(with_serde)]
+    records: GenericPatriciaMap<String, Option<String>>
+}
+
+// load file and p-tree it.
+impl RecordsTree {
+    pub fn new(db_path: PathBuf) -> Result<Self, anyhow::Error> {
+        let mut dosya = OpenOptions::new()
+            .read(true)
+            .open(db_path)?;
+        // patricia_tree == hashmap, o sebeple problem değil.
+
+                // Dosya sonuna kadar oku, EOF hatası normal
+        loop {
+            match decode_from_std_read::<Record, _, _>(&mut dosya, bincode_cfg) {
+                Ok(row) => {
+                    new_db.table.data.insert(row.key, row.val);
+                }
+                Err(_) => break, // Dosya sonu veya parse hatası - döngüden çık
+            }
+        }
+
+        let p_tree = decode_from_std_read(src, config)
+        let result_bytes = encode_into_std_write(&self.db_path, &mut dosya, bincode_cfg)?;
     }
 }
 

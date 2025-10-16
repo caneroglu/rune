@@ -1,6 +1,7 @@
 use anyhow::Ok;
 use rune::cli::interface::Command;
 use rune::core::storage::Record;
+use rune::Komut;
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 use rune::core::storage::SchemaVersion;

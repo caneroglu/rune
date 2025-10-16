@@ -34,6 +34,8 @@ impl RQLParser {
 
                 Some(Komut::Upsert { db, key, value, flags })
             } */
+
+           // TODO: Default path "./databases/name.db" yap. Sonra custom yapabilirsin.
             Rule::upsert_cmd => {
                 let mut db = String::new();
                 let mut key = String::new();
