@@ -6,25 +6,18 @@ use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 use rune::core::storage::SchemaVersion;
 
+
+// !! TODO: Data obje tanımlarını düşün ve yap - artık bitir!
 fn main() -> Result<(), anyhow::Error> {
+
     let std_kolektor = FmtSubscriber::builder()
         .with_max_level(Level::TRACE)
         .pretty()
         .finish();
-
-    let a = Record::new(
-        "deneme".to_owned(),
-        Some("val_dene".to_owned()),
-        5251,
-        SchemaVersion::V1,
-        0,
-    );
-
-    println!("debug_record: {:?}", a);
     tracing::subscriber::set_global_default(std_kolektor)?;
-    Command::parse_command()?;
 
-    Ok(())
+    Command::parse_command()?;
+ 
 }
 
 /*

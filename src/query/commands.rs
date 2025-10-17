@@ -47,19 +47,17 @@ impl Komut {
         }    
     }
 
-    pub fn new_del_cmd(db_name: String, key: String, val: String, flags: Option<Vec<ParserFlags>>) -> Self {
+    pub fn new_del_cmd(db_name: String, key: String, val: String, exact: bool) -> Self {
         Self::Delete { 
             db_name: db_name.clone(),
             // ! Sonra 'custom path' seçmeye imkan verirsin. Sonraki patch'te.
             db_path: PathBuf::from(format!("./databases/{}.bin", db_name)),
             key, 
-            val, 
-            flags, 
+            exact,
         }   
     }
 
-    pub fn new_read_cmd() -> Self {}
-    pub fn new_rename_cmd() -> Self {}
+ 
 }
 
 #[derive(Debug, Clone)]

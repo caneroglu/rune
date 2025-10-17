@@ -3,7 +3,7 @@
 //! This module handles the parsing of RQL commands using the Pest parser generator.
 
 use crate::{
-    core::error::RuneError,
+    core::{error::RuneError, storage::Record},
     query::commands::{Komut, ParserFlags},
 };
 use pest::Parser;
@@ -167,14 +167,80 @@ impl RQLParser {
                         // ya statement = 'pipeline' olacak ya da 'komut'. pipeline şu anda gereksiz, ileriye yönelik ekledim.
                         if statement.as_rule() == Rule::statement {
                             // 'komut' ifadesini açalım,
-                            for komut in statement.into_inner() {
-                                if let Some(komut_adi) = komut.into_inner().next() {
+                            for ikili in statement.into_inner() {
+                                if let Some(birinci_alt_ikili) = ikili.into_inner().next() {
+                                    /* 
+                                    // --
                                     if let Some(parsed_command) = Self::parse_command(komut_adi) {
                                         debug!("Parsed query: {:?}", parsed_command);
                                         return Ok(parsed_command);
                                     } else {
                                         return Err(RuneError::QuerySyntaxError);
                                     }
+                                    // -- */
+
+                            let parsed_komut = match birinci_alt_ikili.as_rule() {
+
+                                Rule::upsert_cmd => {
+
+                                    let mut db = String::new();
+                                    let mut key = String::new();
+                                    let mut value = String::new();
+                                    let mut flags: Option<Vec<ParserFlags>> = None;
+
+                                    for ikinci_alt_ikili in birinci_alt_ikili.into_inner() {
+                                        match ikinci_alt_ikili.as_rule() {
+                                            Rule::db_name => db = ikinci_alt_ikili.as_str().to_string(),
+                                            Rule::key => key = ikinci_alt_ikili.as_str().to_string(),
+                                            Rule::value => value = ikinci_alt_ikili.as_str().to_string(),
+                                            Rule::flags if !ikinci_alt_ikili.as_str().is_empty() => {
+                                                flags = Some(
+                                                    ikinci_alt_ikili.as_str()[1..ikinci_alt_ikili.as_str().len() - 1]
+                                                        .split(",")
+                                                        .map(|el| {
+                                                            match &el
+                                                                .to_ascii_lowercase()
+                                                                .chars()
+                                                                .filter(|ch| !ch.is_whitespace())
+                                                                .collect::<String>()[..]
+                                                            {
+                                                                "nx" => ParserFlags::NX,
+                                                                "xx" => ParserFlags::XX,
+                                                                val if val.starts_with("ttl=") => {
+                                                                    match u32::from_str_radix(
+                                                                        &val[val.find("=").unwrap() + 1..],
+                                                                        10,
+                                                                    ) {
+                                                                        Ok(parsed_ttl_val) => {
+                                                                            ParserFlags::TTL(parsed_ttl_val)
+                                                                        }
+                                                                        Err(_) => ParserFlags::None,
+                                                                    }
+                                                                }
+                                                                _ => ParserFlags::None,
+                                                            }
+                                                        })
+                                                        .collect(),
+                                                )
+                                            }
+                                            // Bunlar yapısal/süs: operator, exact_access, "=" – görmezden gel
+                                            Rule::op_upsert | Rule::exact_access => {}
+                                            _ => {}
+                                        }
+
+                                    }
+
+                                    Record::new(key, val, prev_off, schema_ver, tombstone)
+
+                                }
+
+                                
+ 
+ 
+ 
+                                _ => None,
+ 
+
                                 }
                             }
                         }

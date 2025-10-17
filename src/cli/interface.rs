@@ -1,4 +1,4 @@
-use anyhow::anyhow;
+use anyhow::{anyhow };
 use clap::{Parser, Subcommand};
 use std::{path::PathBuf, process::exit};
 use tracing::{error, info};
@@ -51,28 +51,40 @@ pub enum Command {
 }
 
 impl Command {
-    pub fn parse_command() -> Result<ParseResult, anyhow::Error> {
+
+    pub fn parse_command() -> Result<(), anyhow::Error> {
+        
         let cli = Cli::parse();
+        
         match cli.command {
             Self::Query {
                 query,
                 file,
                 interactive,
             } => {
+
                 if let Some(query_string) = query {
+
                     info!("CLI parse_command CALLED: {:?}", query_string);
                     info!("Query validation started...");
+
                     let query_concatted = query_string.join(" ");
+
                     match RQLParser::parse_query(query_concatted.as_str()) {
+
                         Ok(parsed_query) => {
                             info!("Query is CORRECT!... Calling execute_query_command...");
-                            return CommandExecutor::execute_query_command(parsed_query)
+                             CommandExecutor::execute_query(parsed_query);
+                             Ok(())
                         }
+
                         Err(e) => {
                             error!("Query is WRONG!: {}", e);
                             exit(1);
                         }
+
                     }
+                    
                 } else if let Some(file_path) = file {
                     print!("Debug: \n FILE_PATH: {}", file_path.to_str().unwrap());
                     todo!()
@@ -82,6 +94,7 @@ impl Command {
                 } else {
                     return Err(anyhow!("CLI Parsing Error."));
                 }
+
             }
         }
 

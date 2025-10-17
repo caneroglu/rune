@@ -14,36 +14,8 @@ use std::{
 };
 use tracing::info;
 
-// for Pest.rs Parsing. Sadece dosya okumak ve kaydetmek için.
-// girilen QUERY'i parse etmek için.
-#[derive(Default, Debug, Clone, Serialize, Deserialize, Encode, Decode)]
-pub struct DbModel {
-    //tabiatı itibariyle k/v array.
-    pub table: DataModel,
-    pub db_path: PathBuf,
-}
-
-#[derive(Default, Debug, Clone, Serialize, Deserialize, Encode, Decode)]
-pub struct DataModel {
-    #[bincode(with_serde)]
-    pub data: GenericPatriciaMap<String, InternalDataModel>,
-}
-
-// Dosya adı = veritabanı adı.
-#[derive(Default, Debug, Clone, Serialize, Deserialize, Encode, Decode)]
-pub struct InternalDataModel {
-    pub ts: i64, // UNIX timestamp
-    //pub uuid: Uuid, Şu an gereksiz. Tek kaynaktan yazıyoruz, ilerde belki.
-    pub val: Option<String>,
-}
-
-#[derive(Default, Debug, Clone, Serialize, Deserialize, Encode, Decode)]
-pub struct ExternalDataModel {
-    pub key: String,
-    pub val: InternalDataModel,
-}
-
-pub trait DataMethods {
+  
+/* pub trait DataMethods {
     fn encode(&self) -> Vec<u8>;
     fn decode(data: Vec<u8>) -> Option<Self>
     where
@@ -51,151 +23,12 @@ pub trait DataMethods {
     //fn save_db(&self) -> Result<(), anyhow::Error>;
     fn load_db(&self) -> Result<HashMap<String, InternalDataModel>, anyhow::Error>;
     fn get_size(&self) -> Result<u64, anyhow::Error>;
-}
+} */
 
-// ?: Direkt GenericPatriciaMap olarak kaydedip okuyabiliriz. Fakat, temiz kod için değer mi? - TEST ET!
-impl TryFrom<PathBuf> for DbModel {
-    type Error = RuneError;
-    fn try_from(db_path: PathBuf) -> Result<Self, Self::Error> {
-        let bincode_cfg = config::standard();
-        let mut dosya = File::open(&db_path)?;
-        let mut new_db = DbModel::new(DataModel::new(), db_path);
-        // Dosya sonuna kadar oku, EOF hatası normal
-        loop {
-            match decode_from_std_read::<ExternalDataModel, _, _>(&mut dosya, bincode_cfg) {
-                Ok(row) => {
-                    new_db.table.data.insert(row.key, row.val);
-                }
-                Err(_) => break, // Dosya sonu veya parse hatası - döngüden çık
-            }
-        }
-        Ok(new_db)
-    }
-}
+ 
 
-impl DataMethods for DbModel {
-    fn encode(&self) -> Vec<u8> {
-        todo!()
-    }
-    fn decode(data: Vec<u8>) -> Option<Self>
-    where
-        Self: Sized,
-    {
-        todo!()
-    }
-
-    /*     fn save_db(&self) -> Result<(), anyhow::Error> {
-
-        let bincode_cfg: config::Configuration = config::standard();
-        let db_path = PathBuf::from(format!("./databases/{}.bin",self.db));
-        if let Some(parent) = db_path.parent() {
-            fs::create_dir_all(parent)?;
-        }
-                // APPEND & CREATE & OPEN
-                // AUTO CREATE.
-                // ? Belki, CLI info ekle.
-        let mut dosya = OpenOptions::new().append(true).create(true).open(db_path)?;
-        let result_bytes = encode_into_std_write(&self.data, &mut dosya, bincode_cfg)?;
-        println!("Dosya yazıldı: {} bayt. \n İçerik: {:?}", result_bytes, self.data);
-
-        Ok(())
-
-    } */
-
-    fn load_db(&self) -> Result<HashMap<String, InternalDataModel>, anyhow::Error> {
-        todo!();
-
-        /*      let bincode_cfg = config::standard();
-        let db_path = PathBuf::from(format!("./databases/{}.bin",self.db));
-        let mut dosya = File::open(db_path)?;
-        let mut _hmap = HashMap::new();
-
-        // Dosya sonuna kadar oku, EOF hatası normal
-        loop {
-            match decode_from_std_read::<ExternalDataModel, _,_>(&mut dosya, bincode_cfg) {
-                Ok(record) => {
-                    _hmap.insert(record.key, record.val);
-                },
-                Err(_) => break, // Dosya sonu veya parse hatası - döngüden çık
-            }
-        }
-        println!("Dosya okundu.İçerik: {:?}", _hmap);
-        Ok(_hmap) */
-    }
-    fn get_size(&self) -> Result<u64, anyhow::Error> {
-        match fs::metadata(&self.db_path)?.len() {
-            n if n > 0 => Ok(n),
-            n if n <= 0 => Err(RuneError::DiskFullError.into()),
-            _ => Err(bail!("dee")),
-        }
-    }
-}
-
-// ---
-
-impl DataModel {
-    pub fn new() -> Self {
-        Self {
-            data: GenericPatriciaMap::new(),
-        }
-    }
-}
-
-// key kısmını hashmap'tan alacağız. append-only yöntemiyle.
-impl InternalDataModel {
-    pub fn new(ts: i64, val: Option<String>) -> Self {
-        Self { ts, val }
-    }
-}
-
-// key kısmını hashmap'tan alacağız. append-only yöntemiyle.
-impl ExternalDataModel {
-    pub fn new(key: String, val: InternalDataModel) -> Self {
-        Self { key, val }
-    }
-}
-
-impl DbModel {
-    pub fn new(table: DataModel, db_path: PathBuf) -> Self {
-        Self { table, db_path }
-    }
-
-    fn save_db(&self) -> Result<u64, anyhow::Error> {
-        let bincode_cfg: config::Configuration = config::standard();
-        info!("db_path_debug:{:?}", &self.db_path);
-        if let Some(parent) = &self.db_path.parent() {
-            fs::create_dir_all(parent)?;
-        }
-        // APPEND & CREATE & OPEN
-        // AUTO CREATE.
-        // ? Belki, CLI info ekle.
-        let mut dosya = OpenOptions::new()
-            .append(true)
-            .create(true)
-            .open(&self.db_path)?;
-        let result_bytes = encode_into_std_write(&self.db_path, &mut dosya, bincode_cfg)?;
-        println!(
-            "Dosya yazıldı: {} bayt. \n İçerik: {:?}",
-            result_bytes, self.table
-        );
-        self.get_size()
-    }
-
-    fn load_db(db_path: PathBuf) -> Result<Self, anyhow::Error> {
-        Self::try_from(db_path).map_err(|e| e.into())
-    }
-
-    fn append_db(db_path: PathBuf) -> Result<(), anyhow::Error> {
-        let bincode_cfg: config::Configuration = config::standard();
-        info!("db_path_debug:{:?}", db_path);
-
-        // * .DB dosyasının sonuna .APPEND et.
-        let dosya = OpenOptions::new().append(true).open(&db_path)?;
-
-        Ok(())
-    }
-}
-
+ // * 
+ 
 #[derive(Debug, Clone, Serialize, Deserialize, Encode, Decode)]
 pub struct Record {
     pub key: String,
@@ -264,34 +97,7 @@ impl Record {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Encode, Decode)]
-pub struct RecordsTree {
-        #[bincode(with_serde)]
-    records: GenericPatriciaMap<String, Option<String>>
-}
 
-// load file and p-tree it.
-impl RecordsTree {
-    pub fn new(db_path: PathBuf) -> Result<Self, anyhow::Error> {
-        let mut dosya = OpenOptions::new()
-            .read(true)
-            .open(db_path)?;
-        // patricia_tree == hashmap, o sebeple problem değil.
-
-                // Dosya sonuna kadar oku, EOF hatası normal
-        loop {
-            match decode_from_std_read::<Record, _, _>(&mut dosya, bincode_cfg) {
-                Ok(row) => {
-                    new_db.table.data.insert(row.key, row.val);
-                }
-                Err(_) => break, // Dosya sonu veya parse hatası - döngüden çık
-            }
-        }
-
-        let p_tree = decode_from_std_read(src, config)
-        let result_bytes = encode_into_std_write(&self.db_path, &mut dosya, bincode_cfg)?;
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Encode, Decode)]
 pub enum SchemaVersion {

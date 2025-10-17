@@ -4,7 +4,7 @@
 
 use anyhow::{bail, Ok};
 use std::path::PathBuf;
-use tracing::{error, info};
+use tracing::{debug, error, info};
 
 use crate::{
     core::{error::RuneError, storage::*},
@@ -14,46 +14,32 @@ use crate::{
 pub struct CommandExecutor;
 
 impl CommandExecutor {
+    // Result<ParseResult, anyhow::Error>
     /// Execute a single RQL command
-    pub fn execute_query_command(command: Komut) -> Result<ParseResult, anyhow::Error> {
+    pub fn execute_query(command: Komut)   {
 
         info!("Execute_query_command called: {:?}", command);
 
-        match command {
+        match &command {
+            v @ Komut::Upsert {
+                        db_name,
+                        db_path,
+                        key,
+                        val,
+                        flags,
+                    } => {
+                        debug!("upsert_executed: {:?}",*v )
+                    },
+            Komut::Delete { db_name, db_path, key, exact } => todo!(),
+            Komut::Read { db_name, db_path, key, exact } => todo!(),
+            Komut::Rename { db_name, db_path, old_key, new_key } => todo!(),
+                    }
 
-            // 
+                }
+            }
 
-            Komut::Upsert {
-                db_name,
-                db_path,
-                key,
-                val,
-                flags,
-            } => Self::execute_upsert(db_name, key, val, flags),
 
-            Komut::Delete { db, key, exact } => Ok(ParseResult::TotalWritten(
-                Self::execute_delete(db, key, exact)?,
-            )),
-
-            Komut::Read { db, key, exact } => {
-                Ok(ParseResult::Records(Self::execute_read(db, key, exact)?))
-            },
-
-            Komut::Rename {
-                db,
-                old_key,
-                new_key,
-            } => Ok(ParseResult::TotalWritten(Self::execute_rename(
-                db, old_key, new_key,
-            )?)),
-            
-        }
-
-    }
-
-    // Sınırlayabiliyor muyuz?
-
-    fn execute_upsert(object: Komut) -> Result<ParseResult, anyhow::Error> {
+/*     fn execute_upsert(object: Komut) -> Result<ParseResult, anyhow::Error> {
 
         Komut::new_upsert_cmd(db_name, key, val, flags)
 
@@ -140,4 +126,4 @@ impl CommandExecutor {
     pub fn execute_commands(commands: Vec<Komut>) {
         unimplemented!("Sonra.");
     }
-}
+}*/
